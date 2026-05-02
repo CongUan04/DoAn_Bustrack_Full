@@ -5,8 +5,8 @@
 /// <reference types="vite/client" />
 import axios from 'axios';
 
-// Base URL: ưu tiên biến môi trường, fallback về Render.com production
-const API_BASE = import.meta.env.VITE_API_URL ?? 'https://bustrack-backend-vq38.onrender.com/api';
+// Base URL: cố định gọi thẳng đến Render
+const API_BASE = 'https://bustrack-backend-vq38.onrender.com/api';
 
 const api = axios.create({
     baseURL: API_BASE,

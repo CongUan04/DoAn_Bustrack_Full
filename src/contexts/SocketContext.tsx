@@ -46,7 +46,7 @@ interface SocketContextType {
     lastRfidEvent: RfidSwipe | null; // latest RFID event for toast trigger
 }
 
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL ?? 'https://bustrack-backend-vq38.onrender.com';
+const SOCKET_URL = 'https://bustrack-backend-vq38.onrender.com';
 
 // ── Default KPI (sẽ bị thay bởi REST polling từ Dashboard) ───
 const INITIAL_KPI: KpiData = {
