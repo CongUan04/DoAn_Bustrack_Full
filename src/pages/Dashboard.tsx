@@ -115,10 +115,7 @@ const Dashboard: React.FC = () => {
     const {
         recentSwipes: socketSwipes,
         connected: socketConnected,
-        lastRfidEvent,
     } = useSocket();
-
-    const processedToastIds = useRef<Set<string>>(new Set());
 
     // ── REST fallback swipes (initial load) ───────────────────
     const [restSwipes, setRestSwipes] = useState<RfidSwipe[]>([]);
