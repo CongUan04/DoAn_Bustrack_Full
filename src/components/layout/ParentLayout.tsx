@@ -6,10 +6,11 @@
 import React, { useState } from 'react';
 import { Outlet, Navigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Bus, Bell, LogOut, User, Settings, ChevronDown, Wifi, WifiOff, X, Lock, Mail } from 'lucide-react';
+import { Bus, Bell, LogOut, User, Settings, ChevronDown, Wifi, WifiOff, X, Lock, Mail, Clock } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useSocket } from '../../contexts/SocketContext';
 import { authAPI } from '../../services/api';
+import { toast } from 'react-toastify';
 
 // ── Quick Profile Modal (parent-specific) ─────────────────────
 const ParentQuickProfile: React.FC<{ onClose: () => void }> = ({ onClose }) => {
@@ -156,11 +157,41 @@ const ParentQuickProfile: React.FC<{ onClose: () => void }> = ({ onClose }) => {
 // ── Parent Layout ─────────────────────────────────────────────
 const ParentLayout: React.FC = () => {
     const { isAuthenticated, user, logout } = useAuth();
-    const { connected, recentSwipes } = useSocket();
+    const { connected, recentSwipes, lastRfidEvent } = useSocket();
     const [showMenu, setShowMenu] = useState(false);
     const [showProfile, setShowProfile] = useState(false);
     const [showNotif, setShowNotif] = useState(false);
     const [readIds, setReadIds] = useState<Set<string>>(new Set());
+    const [currentTime, setCurrentTime] = useState(new Date());
+
+    // ── Web Notification: Khi có thẻ quẹt (Giai đoạn 1 + 3) ─────────
+    React.useEffect(() => {
+        if (!lastRfidEvent) return;
+        const { studentName, action, licensePlate, status, isAbnormal, abnormalReason } = lastRfidEvent;
+        
+        // Phụ huynh không nhận cảnh báo thẻ lạ
+        if (status === 'error') return;
+
+        const timeStr = lastRfidEvent.timestamp.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+        
+        if (isAbnormal) {
+            toast.error(`🚨 CẢNH BÁO: ${studentName} vừa ${action.toUpperCase()} ${licensePlate} nhưng ${abnormalReason}! Vui lòng liên hệ tài xế ngay.`, { autoClose: 15000 });
+            return;
+        }
+
+        const msg = `Con bạn (${studentName}) đã ${action.toUpperCase()} ${licensePlate} lúc ${timeStr}`;
+
+        if (action === 'lên xe') {
+            toast.success(msg, { icon: '🚌', autoClose: 6000 });
+        } else {
+            toast.info(msg, { icon: '🏫', autoClose: 6000 });
+        }
+    }, [lastRfidEvent]);
+
+    React.useEffect(() => {
+        const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+        return () => clearInterval(timer);
+    }, []);
 
     if (!isAuthenticated) return <Navigate to="/login" replace />;
     if (user?.role !== 'parent') return <Navigate to="/" replace />;
@@ -190,6 +221,16 @@ const ParentLayout: React.FC = () => {
                             <p style={{ margin: 0, fontWeight: 800, fontSize: 15, color: '#7c3aed' }}>BusTrack</p>
                             <p style={{ margin: 0, fontSize: 10, color: '#94a3b8' }}>Phụ huynh</p>
                         </div>
+                    </div>
+
+                    {/* Live Clock */}
+                    <div style={{
+                        display: 'flex', alignItems: 'center', gap: 6,
+                        padding: '5px 12px', borderRadius: 20, fontSize: 13, fontWeight: 700,
+                        background: '#f1f5f9', color: '#334155', border: '1px solid #e2e8f0', letterSpacing: '0.5px'
+                    }}>
+                        <Clock size={14} color="#64748b" />
+                        {currentTime.toLocaleTimeString('vi-VN', { hour12: false })}
                     </div>
 
                     {/* Live status */}

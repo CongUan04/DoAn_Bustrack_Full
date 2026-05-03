@@ -240,7 +240,6 @@ const Dashboard: React.FC = () => {
                             {socketConnected && <span className="live-dot" />}
                         </div>
                     )}
-                    <div className="last-update-text">Cập nhật: {lastUpdate.toLocaleTimeString('vi-VN')}</div>
                     <button
                         className="map-refresh-btn"
                         onClick={fetchStats}

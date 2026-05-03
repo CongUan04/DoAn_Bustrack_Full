@@ -35,6 +35,8 @@ export interface RfidSwipe {
     action: 'lên xe' | 'xuống xe';
     timestamp: Date;
     status: 'success' | 'error';
+    isAbnormal?: boolean;
+    abnormalReason?: string;
 }
 
 interface SocketContextType {
@@ -44,6 +46,7 @@ interface SocketContextType {
     lastUpdate: Date;
     gpsUpdates: Record<string, GpsUpdate>; // busId → latest GPS
     lastRfidEvent: RfidSwipe | null; // latest RFID event for toast trigger
+    lastAlert: any; // latest alert from backend
 }
 
 const SOCKET_URL = 'https://bustrack-backend-vq38.onrender.com';
@@ -66,6 +69,7 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     const [lastUpdate, setLastUpdate] = useState(new Date());
     const [gpsUpdates, setGpsUpdates] = useState<Record<string, GpsUpdate>>({});
     const [lastRfidEvent, setLastRfidEvent] = useState<RfidSwipe | null>(null);
+    const [lastAlert, setLastAlert] = useState<any>(null);
 
     // ── Connect / Disconnect ──────────────────────────────────
     // Dependencies [] = socket chỉ tạo 1 lần
@@ -96,6 +100,7 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         s.on('rfid_scan', (data: {
             studentName: string; studentId: string; studentCode: string; grade: string;
             busId: string; licensePlate: string; action: string; timestamp: string;
+            isAbnormal?: boolean; abnormalReason?: string;
         }) => {
             const swipe: RfidSwipe = {
                 id: `sw_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
@@ -108,6 +113,8 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                 action: data.action === 'Boarding' ? 'lên xe' : 'xuống xe',
                 timestamp: new Date(data.timestamp),
                 status: 'success',
+                isAbnormal: data.isAbnormal,
+                abnormalReason: data.abnormalReason,
             };
             setRecentSwipes(prev => [swipe, ...prev].slice(0, 20));
             setLastRfidEvent(swipe);
@@ -138,6 +145,11 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             setLastUpdate(new Date());
         });
 
+        s.on('new_alert', (data: any) => {
+            setLastAlert(data);
+            setLastUpdate(new Date());
+        });
+
         return () => {
             s.disconnect();
         };
@@ -145,7 +157,7 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
 
     return (
-        <SocketContext.Provider value={{ kpi, recentSwipes, connected, lastUpdate, gpsUpdates, lastRfidEvent }}>
+        <SocketContext.Provider value={{ kpi, recentSwipes, connected, lastUpdate, gpsUpdates, lastRfidEvent, lastAlert }}>
             {children}
         </SocketContext.Provider>
     );

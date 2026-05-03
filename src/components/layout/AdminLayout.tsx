@@ -5,11 +5,12 @@ import {
     LayoutDashboard, Map, ClipboardList, GraduationCap,
     Bus, Bell, ChevronLeft, ChevronRight, LogOut,
     Route, Users, Search, ChevronDown, User, Settings,
-    AlertTriangle, CheckCircle, Info, RefreshCw,
+    AlertTriangle, CheckCircle, Info, RefreshCw, Clock
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useSocket } from '../../contexts/SocketContext';
 import ProfileModal from './ProfileModal';
+import { toast } from 'react-toastify';
 
 const ADMIN_MENU = [
     { path: '/admin/dashboard', icon: LayoutDashboard, label: 'Dashboard',        color: '#3B82F6' },
@@ -184,12 +185,55 @@ const AdminSidebar: React.FC<{ collapsed: boolean; onToggle: () => void }> = ({ 
 // ── Admin Topbar ──────────────────────────────────────────────
 const AdminTopbar: React.FC<{ sidebarCollapsed: boolean }> = ({ sidebarCollapsed }) => {
     const { user, logout } = useAuth();
-    const { recentSwipes, connected } = useSocket();
+    const { recentSwipes, connected, lastRfidEvent, lastAlert } = useSocket();
     const [showNotif, setShowNotif] = useState(false);
     const [showProfile, setShowProfile] = useState(false);
     const [showProfileModal, setShowProfileModal] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [readIds, setReadIds] = useState<Set<string>>(new Set());
+    const [currentTime, setCurrentTime] = useState(new Date());
+
+    // ── Web Notification: Khi có thẻ quẹt (Giai đoạn 1 + 3) ─────────
+    React.useEffect(() => {
+        if (!lastRfidEvent) return;
+        const { studentName, action, licensePlate, status, isAbnormal, abnormalReason } = lastRfidEvent;
+
+        if (status === 'error') {
+            toast.error(`⚠️ Thẻ lạ/Chưa đăng ký vừa quẹt trên xe ${licensePlate || 'N/A'}!`, { autoClose: 7000 });
+            return;
+        }
+
+        const timeStr = lastRfidEvent.timestamp.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+
+        if (isAbnormal) {
+            toast.error(`🚨 CẢNH BÁO: ${studentName} vừa ${action.toUpperCase()} ${licensePlate} nhưng ${abnormalReason}!`, { autoClose: 10000 });
+            return;
+        }
+
+        const msg = `${studentName} vừa ${action.toUpperCase()} ${licensePlate} lúc ${timeStr}`;
+
+        if (action === 'lên xe') {
+            toast.success(msg, { icon: '🟢', autoClose: 5000 });
+        } else {
+            toast.info(msg, { icon: '🔵', autoClose: 5000 });
+        }
+    }, [lastRfidEvent]);
+
+    // ── Cảnh báo SOS từ tài xế ─────────
+    React.useEffect(() => {
+        if (!lastAlert) return;
+        if (lastAlert.type === 'SOS' || lastAlert.severity === 'danger') {
+            toast.error(lastAlert.message || '🚨 Có tín hiệu khẩn cấp từ tài xế!', {
+                autoClose: false, // Bắt buộc Admin phải bấm tắt
+                icon: '🆘'
+            });
+        }
+    }, [lastAlert]);
+
+    React.useEffect(() => {
+        const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+        return () => clearInterval(timer);
+    }, []);
 
     const notifs = recentSwipes.slice(0, 8).map(s => ({
         id: s.id,
@@ -234,7 +278,17 @@ const AdminTopbar: React.FC<{ sidebarCollapsed: boolean }> = ({ sidebarCollapsed
                 />
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                {/* Live Clock */}
+                <div style={{
+                    display: 'flex', alignItems: 'center', gap: 6,
+                    padding: '5px 12px', borderRadius: 20, fontSize: 13, fontWeight: 700,
+                    background: '#f1f5f9', color: '#334155', border: '1px solid #e2e8f0', letterSpacing: '0.5px'
+                }}>
+                    <Clock size={14} color="#64748b" />
+                    {currentTime.toLocaleTimeString('vi-VN', { hour12: false })}
+                </div>
+
                 {/* Connection badge */}
                 <div style={{
                     display: 'flex', alignItems: 'center', gap: 5,

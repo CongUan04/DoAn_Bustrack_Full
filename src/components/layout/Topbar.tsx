@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Bell, Search, ChevronDown, LogOut, User, Settings } from 'lucide-react';
+import { Bell, Search, ChevronDown, LogOut, User, Settings, Clock } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import ProfileModal from './ProfileModal';
 
@@ -17,6 +17,12 @@ const Topbar: React.FC = () => {
     const [showProfile, setShowProfile] = useState(false);
     const [showProfileModal, setShowProfileModal] = useState(false);
     const [notifications, setNotifications] = useState(MOCK_NOTIFICATIONS);
+    const [currentTime, setCurrentTime] = useState(new Date());
+
+    useEffect(() => {
+        const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+        return () => clearInterval(timer);
+    }, []);
 
     const unreadCount = notifications.filter(n => !n.read).length;
 
@@ -38,6 +44,15 @@ const Topbar: React.FC = () => {
 
             {/* Right: Actions */}
             <div className="topbar-actions">
+                {/* Live Clock */}
+                <div className="topbar-clock" style={{ fontSize: '15px', fontWeight: 600, color: '#334155', letterSpacing: '1px', display: 'flex', alignItems: 'center', gap: '6px', marginRight: '8px' }}>
+                    <Clock size={16} color="#64748B" />
+                    {currentTime.toLocaleTimeString('vi-VN', { hour12: false })}
+                </div>
+                
+                {/* Divider */}
+                <div className="topbar-divider" />
+
                 {/* Bell notification */}
                 <div className="topbar-action-wrapper">
                     <button

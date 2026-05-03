@@ -137,7 +137,8 @@ const AttendancePage: React.FC = () => {
                         <span>{socketConnected ? 'Live · ESP32 thật' : 'Mất kết nối'}</span>
                     </div>
                     <motion.button className={`live-toggle ${paused ? 'paused' : ''}`}
-                        onClick={() => setPaused(p => !p)} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
+                        onClick={() => setPaused(p => !p)} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                        style={{ display: 'flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap' }}>
                         {paused ? <><Play size={13} /> Tiếp tục</> : <><Pause size={13} /> Tạm dừng</>}
                     </motion.button>
                 </div>
@@ -199,10 +200,12 @@ const AttendancePage: React.FC = () => {
                 <span className="result-count">{filtered.length} lượt</span>
 
                 <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
-                    <motion.button className="export-btn excel" onClick={exportCSV} whileHover={{ scale: 1.02 }}>
+                    <motion.button className="export-btn excel" onClick={exportCSV} whileHover={{ scale: 1.02 }}
+                        style={{ display: 'flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap' }}>
                         <Download size={14} /> Xuất Excel
                     </motion.button>
-                    <motion.button className="export-btn pdf" onClick={() => window.print()} whileHover={{ scale: 1.02 }}>
+                    <motion.button className="export-btn pdf" onClick={() => window.print()} whileHover={{ scale: 1.02 }}
+                        style={{ display: 'flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap' }}>
                         <Printer size={14} /> Xuất PDF
                     </motion.button>
                 </div>

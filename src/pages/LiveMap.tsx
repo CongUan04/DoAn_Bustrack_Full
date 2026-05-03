@@ -16,6 +16,7 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { useSocket } from '../contexts/SocketContext';
 import { busAPI, routeAPI, attendanceAPI } from '../services/api';
+import { toast } from 'react-toastify';
 
 // ── Fix Leaflet default icon path (Vite issue) ───────────────
 delete (L.Icon.Default.prototype as unknown as Record<string, unknown>)._getIconUrl;
@@ -61,6 +62,8 @@ interface BusDisplay extends BusData {
     speed: number;
     status: 'active' | 'idle' | 'offline';
     lastUpdate: Date;
+    distanceToSchool?: number;
+    etaMins?: number;
 }
 
 const STATUS_CFG: Record<string, { label: string; color: string; bg: string; hex: string }> = {
@@ -135,12 +138,34 @@ const relativeTime = (date: Date) => {
     return `${Math.floor(diff / 60)} phút trước`;
 };
 
+// ── Calculate Distance (Haversine) ───────────────────────────
+const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+    const R = 6371; // km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+};
+
 // ── Convert BusData → BusDisplay ─────────────────────────────
 const toBusDisplay = (bus: BusData): BusDisplay => {
     const hasGps = bus.currentLat != null && bus.currentLng != null;
     const status: BusDisplay['status'] = !hasGps || !bus.isOnline
         ? 'offline'
         : bus.currentSpeed > 0 ? 'active' : 'idle';
+        
+    let distanceToSchool: number | undefined;
+    let etaMins: number | undefined;
+
+    if (hasGps && bus.route_id?.schoolPos) {
+        distanceToSchool = calculateDistance(bus.currentLat!, bus.currentLng!, bus.route_id.schoolPos.lat, bus.route_id.schoolPos.lng);
+        const speedToUse = Math.max(bus.currentSpeed, 20); // min 20km/h estimation
+        etaMins = (distanceToSchool / speedToUse) * 60;
+    }
+
     return {
         ...bus,
         lat: bus.currentLat ?? SCHOOL_POS[0],
@@ -148,6 +173,8 @@ const toBusDisplay = (bus: BusData): BusDisplay => {
         speed: bus.currentSpeed,
         status,
         lastUpdate: bus.lastSeen ? new Date(bus.lastSeen) : new Date(),
+        distanceToSchool,
+        etaMins
     };
 };
 
@@ -201,6 +228,16 @@ const LiveMap: React.FC = () => {
         setBuses(prev => prev.map(bus => {
             const update = gpsUpdates[bus._id];
             if (!update) return bus;
+            
+            let distanceToSchool: number | undefined = bus.distanceToSchool;
+            let etaMins: number | undefined = bus.etaMins;
+
+            if (bus.route_id?.schoolPos) {
+                distanceToSchool = calculateDistance(update.lat, update.lng, bus.route_id.schoolPos.lat, bus.route_id.schoolPos.lng);
+                const speedToUse = Math.max(update.speed, 20);
+                etaMins = (distanceToSchool / speedToUse) * 60;
+            }
+
             return {
                 ...bus,
                 lat: update.lat,
@@ -208,6 +245,8 @@ const LiveMap: React.FC = () => {
                 speed: update.speed,
                 status: update.speed > 0 ? 'active' : 'idle',
                 lastUpdate: new Date(update.timestamp),
+                distanceToSchool,
+                etaMins
             };
         }));
     }, [gpsUpdates]);
@@ -217,6 +256,31 @@ const LiveMap: React.FC = () => {
         const t = setInterval(() => setTick(n => n + 1), 10000);
         return () => clearInterval(t);
     }, []);
+
+    // ── Notify when near or arrived at school ─────────────────
+    const notifiedRef = useRef<Record<string, { near: boolean; arrived: boolean }>>({});
+    useEffect(() => {
+        buses.forEach(bus => {
+            if (bus.distanceToSchool === undefined || bus.etaMins === undefined || bus.status === 'offline') return;
+
+            if (!notifiedRef.current[bus._id]) {
+                notifiedRef.current[bus._id] = { near: false, arrived: false };
+            }
+            const state = notifiedRef.current[bus._id];
+
+            if (bus.distanceToSchool <= 0.1 && !state.arrived) {
+                toast.success(`Thông báo: Xe ${bus.licensePlate} đã đến trường!`, { autoClose: 5000, theme: "colored" });
+                state.arrived = true;
+                state.near = true;
+            } else if (bus.distanceToSchool > 0.1 && bus.etaMins <= 5 && !state.near) {
+                toast.info(`Thông báo: Xe ${bus.licensePlate} sắp đến trường (khoảng ${Math.ceil(bus.etaMins)} phút)!`, { autoClose: 6000, theme: "colored" });
+                state.near = true;
+            } else if (bus.distanceToSchool > 1) {
+                state.near = false;
+                state.arrived = false;
+            }
+        });
+    }, [buses]);
 
     const selected = buses.find(b => b._id === selectedId) ?? buses[0] ?? null;
 
@@ -341,7 +405,12 @@ const LiveMap: React.FC = () => {
                             }}
                         >
                             <Popup>
-                                <BusPopup bus={bus} />
+                                <BusPopup 
+                                    bus={bus} 
+                                    isSelected={bus._id === selectedId}
+                                    students={bus._id === selectedId ? busStudents : []}
+                                    loadingStudents={bus._id === selectedId ? loadingStudents : false}
+                                />
                             </Popup>
                         </Marker>
                     ))}
@@ -495,6 +564,19 @@ const LiveMap: React.FC = () => {
                                         <p className="detail-val">{Math.round(selected.speed)} km/h</p>
                                     </div>
                                 </div>
+                                {selected.etaMins !== undefined && selected.distanceToSchool !== undefined && (
+                                    <div className="detail-item">
+                                        <Clock size={14} color="#F43F5E" />
+                                        <div>
+                                            <p className="detail-label">Đến trường</p>
+                                            <p className="detail-val">
+                                                {selected.distanceToSchool <= 0.1 
+                                                    ? 'Đã đến nơi' 
+                                                    : `~${Math.ceil(selected.etaMins)} phút (${selected.distanceToSchool.toFixed(1)} km)`}
+                                            </p>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                             {selected.status === 'offline' && (
                                 <div className="detail-warning">
@@ -566,7 +648,7 @@ const LiveMap: React.FC = () => {
 };
 
 // ── Bus Popup Component ──────────────────────────────────────
-const BusPopup: React.FC<{ bus: BusDisplay }> = ({ bus }) => {
+const BusPopup: React.FC<{ bus: BusDisplay; isSelected?: boolean; students?: any[]; loadingStudents?: boolean }> = ({ bus, isSelected, students, loadingStudents }) => {
     const cfg = STATUS_CFG[bus.status];
     return (
         <div className="bus-popup">
@@ -581,9 +663,51 @@ const BusPopup: React.FC<{ bus: BusDisplay }> = ({ bus }) => {
             </div>
             <div className="bus-popup-body">
                 <div className="popup-row"><Gauge size={13} /><span><strong>{Math.round(bus.speed)}</strong> km/h</span></div>
-                {bus.driver_id && <div className="popup-row"><Radio size={13} /><span><strong>{bus.driver_id.fullName}</strong></span></div>}
+                {bus.etaMins !== undefined && bus.distanceToSchool !== undefined && (
+                    <div className="popup-row"><Clock size={13} color="#F43F5E" /><span>Cách trường: <strong style={{color: '#F43F5E'}}>{bus.distanceToSchool <= 0.1 ? 'Đã đến' : `~${Math.ceil(bus.etaMins)} phút (${bus.distanceToSchool.toFixed(1)} km)`}</strong></span></div>
+                )}
+                {bus.driver_id && (
+                    <>
+                        <div className="popup-row"><Radio size={13} /><span><strong>{bus.driver_id.fullName}</strong></span></div>
+                        <div className="popup-row"><Phone size={13} /><span><a href={`tel:${bus.driver_id.phone}`} style={{textDecoration: 'none', color: '#3B82F6'}}>{bus.driver_id.phone}</a></span></div>
+                    </>
+                )}
                 {bus.route_id && <div className="popup-row"><Navigation size={13} /><span>{bus.route_id.routeName}</span></div>}
                 <div className="popup-row"><Users size={13} /><span>Sức chứa: {bus.capacity} học sinh</span></div>
+                
+                {isSelected && (
+                    <div style={{ marginTop: 10, borderTop: '1px dashed #cbd5e1', paddingTop: 10 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+                            <GraduationCap size={13} color="#7c3aed" />
+                            <p style={{ fontSize: 12, fontWeight: 700, color: '#374151', margin: 0 }}>Học sinh trên xe</p>
+                        </div>
+                        {loadingStudents ? (
+                            <div style={{ fontSize: 11, color: '#64748b', textAlign: 'center' }}>Đang tải...</div>
+                        ) : students && students.length > 0 ? (
+                            <div style={{ maxHeight: 140, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 4, paddingRight: 4 }}>
+                                {students.map((item, idx) => (
+                                    <div key={idx} style={{ 
+                                        display: 'flex', justifyContent: 'space-between', alignItems: 'center', 
+                                        fontSize: 11, padding: '5px 8px', 
+                                        background: item.action_type === 'Boarding' ? '#f0fdf4' : '#eff6ff', 
+                                        border: `1px solid ${item.action_type === 'Boarding' ? '#bbf7d0' : '#bfdbfe'}`,
+                                        borderRadius: 6 
+                                    }}>
+                                        <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, flex: 1 }}>
+                                            <span style={{ fontWeight: 600, color: '#1e293b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.student.fullName}</span>
+                                            <span style={{ fontSize: 10, color: '#64748b' }}>{item.student.class}</span>
+                                        </div>
+                                        <span style={{ fontWeight: 700, fontSize: 10, color: item.action_type === 'Boarding' ? '#059669' : '#2563eb', marginLeft: 8 }}>
+                                            {item.action_type === 'Boarding' ? '↑ Lên' : '↓ Xuống'}
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div style={{ fontSize: 11, color: '#64748b', textAlign: 'center' }}>Chưa có học sinh</div>
+                        )}
+                    </div>
+                )}
             </div>
         </div>
     );
