@@ -68,7 +68,7 @@ export const studentAPI = {
     create: (data: unknown) => api.post('/students', data),
     update: (id: string, data: unknown) => api.put(`/students/${id}`, data),
     remove: (id: string) => api.delete(`/students/${id}`),
-    markAbsent: (id: string) => api.put(`/students/${id}/absent`),
+    markAbsent: (id: string, reason?: string) => api.put(`/students/${id}/absent`, { reason }),
     updateStudyDays: (id: string, studyDays: number[]) => api.put(`/students/${id}/study-days`, { studyDays }),
 };
 

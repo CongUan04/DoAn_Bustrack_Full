@@ -84,6 +84,148 @@ interface RouteData {
 const fmtTime = (ts: string) =>
     new Date(ts).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
 
+// ── Preset absence reasons ──────────────────────────────────────
+const PRESET_REASONS = [
+    { emoji: '🤒', label: 'Ốm / bệnh' },
+    { emoji: '🏥', label: 'Đi khám bệnh' },
+    { emoji: '👨‍👩‍👧', label: 'Việc gia đình' },
+    { emoji: '🚗', label: 'Phương tiện gặp sự cố' },
+    { emoji: '🌧️', label: 'Thời tiết xấu' },
+    { emoji: '📝', label: 'Khác' },
+];
+
+// ── Absence Modal Component ─────────────────────────────────────
+const AbsenceModal: React.FC<{
+    childName: string;
+    onConfirm: (reason: string) => void;
+    onClose: () => void;
+    loading: boolean;
+}> = ({ childName, onConfirm, onClose, loading }) => {
+    const [selected, setSelected] = useState('');
+    const [custom, setCustom] = useState('');
+
+    const finalReason = selected === 'Khác' ? custom.trim() : selected;
+    const canSubmit = selected !== '' && (selected !== 'Khác' || custom.trim() !== '');
+
+    return (
+        <AnimatePresence>
+            <motion.div
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                onClick={onClose}
+                style={{
+                    position: 'fixed', inset: 0, zIndex: 9000,
+                    background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16,
+                }}
+            >
+                <motion.div
+                    initial={{ scale: 0.9, y: 20, opacity: 0 }}
+                    animate={{ scale: 1, y: 0, opacity: 1 }}
+                    exit={{ scale: 0.9, y: 20, opacity: 0 }}
+                    transition={{ type: 'spring', stiffness: 320, damping: 28 }}
+                    onClick={e => e.stopPropagation()}
+                    style={{
+                        background: 'var(--surface)', borderRadius: 20, padding: '24px',
+                        width: '100%', maxWidth: 420,
+                        boxShadow: '0 30px 80px rgba(0,0,0,0.2)',
+                    }}
+                >
+                    {/* Header */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
+                        <div style={{
+                            width: 44, height: 44, borderRadius: 12, flexShrink: 0,
+                            background: 'var(--danger-light)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        }}>
+                            <XCircle size={22} color="var(--danger)" />
+                        </div>
+                        <div>
+                            <p style={{ margin: 0, fontWeight: 700, fontSize: 16, color: 'var(--text-primary)' }}>Báo vắng mặt hôm nay</p>
+                            <p style={{ margin: '2px 0 0', fontSize: 12, color: 'var(--text-secondary)' }}>{childName}</p>
+                        </div>
+                        <button onClick={onClose} style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: 'var(--text-secondary)' }}>
+                            <X size={18} />
+                        </button>
+                    </div>
+
+                    {/* Reason presets */}
+                    <p style={{ margin: '0 0 10px', fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: 0.6 }}>
+                        Chọn lý do
+                    </p>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 14 }}>
+                        {PRESET_REASONS.map(r => (
+                            <button
+                                key={r.label}
+                                onClick={() => setSelected(r.label)}
+                                style={{
+                                    padding: '10px 12px', borderRadius: 10, cursor: 'pointer',
+                                    display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 600,
+                                    border: `2px solid ${selected === r.label ? 'var(--danger)' : 'var(--border)'}`,
+                                    background: selected === r.label ? 'var(--danger-light)' : 'var(--bg)',
+                                    color: selected === r.label ? 'var(--danger)' : 'var(--text-primary)',
+                                    transition: 'all 0.15s',
+                                    textAlign: 'left',
+                                }}
+                            >
+                                <span style={{ fontSize: 18 }}>{r.emoji}</span>
+                                {r.label}
+                            </button>
+                        ))}
+                    </div>
+
+                    {/* Custom input if "Khác" */}
+                    <AnimatePresence>
+                        {selected === 'Khác' && (
+                            <motion.div
+                                initial={{ opacity: 0, height: 0 }}
+                                animate={{ opacity: 1, height: 'auto' }}
+                                exit={{ opacity: 0, height: 0 }}
+                                style={{ overflow: 'hidden', marginBottom: 14 }}
+                            >
+                                <textarea
+                                    autoFocus
+                                    value={custom}
+                                    onChange={e => setCustom(e.target.value)}
+                                    placeholder="Nhập lý do cụ thể..."
+                                    rows={2}
+                                    style={{
+                                        width: '100%', padding: '10px 12px', borderRadius: 10,
+                                        border: '1.5px solid var(--border)', background: 'var(--bg)',
+                                        color: 'var(--text-primary)', fontSize: 13, resize: 'none',
+                                        outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit',
+                                    }}
+                                />
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+
+                    {/* Buttons */}
+                    <div style={{ display: 'flex', gap: 10 }}>
+                        <button onClick={onClose} style={{
+                            flex: 1, padding: '11px', borderRadius: 10, border: '1px solid var(--border)',
+                            background: 'var(--surface-hover)', cursor: 'pointer', fontWeight: 600, fontSize: 13, color: 'var(--text-primary)',
+                        }}>
+                            Huỷ
+                        </button>
+                        <button
+                            onClick={() => canSubmit && onConfirm(finalReason)}
+                            disabled={!canSubmit || loading}
+                            style={{
+                                flex: 2, padding: '11px', borderRadius: 10, border: 'none',
+                                background: canSubmit ? 'var(--danger)' : 'var(--border)',
+                                color: 'white', fontWeight: 700, fontSize: 13,
+                                cursor: canSubmit && !loading ? 'pointer' : 'not-allowed',
+                                opacity: loading ? 0.7 : 1, transition: 'all 0.15s',
+                            }}
+                        >
+                            {loading ? 'Đang gửi...' : '✓ Xác nhận báo vắng'}
+                        </button>
+                    </div>
+                </motion.div>
+            </motion.div>
+        </AnimatePresence>
+    );
+};
+
 // ── Main Component ──────────────────────────────────────────────
 const ParentView: React.FC = () => {
     const { user } = useAuth();
@@ -95,6 +237,10 @@ const ParentView: React.FC = () => {
     const [buses, setBuses] = useState<BusInfo[]>([]);
     const [routes, setRoutes] = useState<RouteData[]>([]);
     const [loading, setLoading] = useState(true);
+
+    // Absent modal state
+    const [absentModal, setAbsentModal] = useState<{ childId: string; childName: string } | null>(null);
+    const [absentLoading, setAbsentLoading] = useState(false);
 
     const [dismissBanner, setDismissBanner] = useState(false);
     const needEmailSetup = !user?.isEmailSet && !dismissBanner;
@@ -132,14 +278,22 @@ const ParentView: React.FC = () => {
         }
     }, [todayISO]);
 
-    const handleMarkAbsent = async (childId: string, childName: string) => {
-        if (!window.confirm(`Bạn có chắc chắn muốn báo vắng mặt hôm nay cho học sinh ${childName} không? Xe buýt sẽ không đón học sinh này.`)) return;
+    const handleMarkAbsent = (childId: string, childName: string) => {
+        setAbsentModal({ childId, childName });
+    };
+
+    const handleConfirmAbsent = async (reason: string) => {
+        if (!absentModal) return;
+        setAbsentLoading(true);
         try {
-            await studentAPI.markAbsent(childId);
-            toast.success(`Đã báo vắng mặt cho ${childName}. Tài xế đã được thông báo.`);
+            await studentAPI.markAbsent(absentModal.childId, reason);
+            toast.success(`✅ Đã báo vắng mặt cho ${absentModal.childName}. Lý do: ${reason}. Tài xế đã được thông báo.`);
+            setAbsentModal(null);
             fetchData();
         } catch (err: any) {
             toast.error(err.response?.data?.message || 'Có lỗi xảy ra khi báo vắng mặt');
+        } finally {
+            setAbsentLoading(false);
         }
     };
 
@@ -203,6 +357,7 @@ const ParentView: React.FC = () => {
     })();
 
     return (
+        <>
         <div style={{ padding: '20px 24px', maxWidth: 1100, margin: '0 auto' }}>
             {/* ── Banner nhắc cập nhật Gmail ─────────────────── */}
             <AnimatePresence>
@@ -594,6 +749,17 @@ const ParentView: React.FC = () => {
             </div>
 
         </div>
+
+        {/* ── Absence Modal ── */}
+        {absentModal && (
+            <AbsenceModal
+                childName={absentModal.childName}
+                onConfirm={handleConfirmAbsent}
+                onClose={() => setAbsentModal(null)}
+                loading={absentLoading}
+            />
+        )}
+        </>
     );
 };
 

@@ -176,7 +176,8 @@ const DriverView: React.FC = () => {
         if (!lastStudentStatus || lastStudentStatus === prevStatus.current) return;
         prevStatus.current = lastStudentStatus;
         if (lastStudentStatus.status === 'Absent') {
-            toast.warning(`⚠️ Học sinh ${lastStudentStatus.studentName} đã báo vắng mặt hôm nay. Vui lòng bỏ qua điểm đón này.`);
+            const reasonText = lastStudentStatus.reason ? ` · Lý do: ${lastStudentStatus.reason}` : '';
+            toast.warning(`⚠️ Học sinh ${lastStudentStatus.studentName} đã báo vắng mặt hôm nay${reasonText}. Vui lòng bỏ qua điểm đón này.`, { autoClose: 10000 });
         }
     }, [lastStudentStatus]);
 
