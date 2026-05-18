@@ -108,7 +108,7 @@ const Dashboard: React.FC = () => {
     const [prevKpi, setPrevKpi] = useState<KpiData>(EMPTY_KPI);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
+    const [, setLastUpdate] = useState<Date>(new Date());
     const [, setTick] = useState(0);
 
     // ── Socket.io real-time ────────────────────────────────────
@@ -178,7 +178,7 @@ const Dashboard: React.FC = () => {
         {
             label: 'Xe đang hoạt động', value: kpi.activeBuses,
             unit: `/ ${kpi.totalBuses} xe`, icon: Bus,
-            color: '#2563EB', bg: '#EFF6FF',
+            color: 'var(--primary)', bg: 'var(--primary-light)',
             gradient: 'linear-gradient(90deg, #3B82F6, #60A5FA)',
             trend: kpi.activeBuses - prevKpi.activeBuses,
             subtext: 'Cập nhật thời gian thực',
@@ -186,7 +186,7 @@ const Dashboard: React.FC = () => {
         {
             label: 'Học sinh đang trên xe', value: kpi.studentsOnBus,
             unit: 'em', icon: Users,
-            color: '#059669', bg: '#F0FDF4',
+            color: 'var(--success)', bg: 'var(--success-light)',
             gradient: 'linear-gradient(90deg, #10B981, #34D399)',
             trend: kpi.studentsOnBus - prevKpi.studentsOnBus,
             subtext: kpi.totalStudents > 0
@@ -196,14 +196,14 @@ const Dashboard: React.FC = () => {
         {
             label: 'Điểm danh hôm nay', value: kpi.todayAttendance,
             unit: 'lượt', icon: Clock,
-            color: '#D97706', bg: '#FFFBEB',
+            color: 'var(--warning)', bg: 'var(--warning-light)',
             gradient: 'linear-gradient(90deg, #F59E0B, #FCD34D)',
             subtext: 'Tổng số lượt quẹt thẻ',
         },
         {
             label: 'Cảnh báo chưa xử lý', value: kpi.unresolvedAlerts,
             unit: 'cảnh báo', icon: Bell,
-            color: '#DC2626', bg: '#FEF2F2',
+            color: 'var(--danger)', bg: 'var(--danger-light)',
             gradient: 'linear-gradient(90deg, #EF4444, #F87171)',
             trend: kpi.unresolvedAlerts - prevKpi.unresolvedAlerts,
             subtext: kpi.unresolvedAlerts === 0 ? 'Không có cảnh báo ✓' : `${kpi.dangerAlerts} nguy hiểm cần xử lý`,
@@ -345,8 +345,8 @@ const Dashboard: React.FC = () => {
                         </div>
                         <div className="bus-status-list">
                             {[
-                                { label: 'Đang online', count: kpi.activeBuses, color: '#10B981', bg: '#F0FDF4' },
-                                { label: 'Offline', count: kpi.offlineBuses, color: '#EF4444', bg: '#FEF2F2' },
+                                { label: 'Đang online', count: kpi.activeBuses, color: 'var(--success)', bg: 'var(--success-light)' },
+                                { label: 'Offline', count: kpi.offlineBuses, color: 'var(--danger)', bg: 'var(--danger-light)' },
                             ].map(item => (
                                 <div key={item.label} className="bus-status-row">
                                     <div className="bus-status-left">
@@ -374,17 +374,17 @@ const Dashboard: React.FC = () => {
                         </div>
                         <div className="alert-summary-list">
                             {[
-                                { type: 'Nguy hiểm', count: kpi.dangerAlerts, color: '#EF4444' },
-                                { type: 'Cảnh báo', count: kpi.warningAlerts, color: '#F59E0B' },
-                                { type: 'Chưa xử lý', count: kpi.unresolvedAlerts, color: '#8B5CF6' },
-                                { type: 'Điểm danh', count: kpi.todayAttendance, color: '#3B82F6' },
+                                { type: 'Nguy hiểm', count: kpi.dangerAlerts, color: 'var(--danger)' },
+                                { type: 'Cảnh báo', count: kpi.warningAlerts, color: 'var(--warning)' },
+                                { type: 'Chưa xử lý', count: kpi.unresolvedAlerts, color: 'var(--purple)' },
+                                { type: 'Điểm danh', count: kpi.todayAttendance, color: 'var(--primary)' },
                             ].map(item => (
                                 <div key={item.type} className="alert-summary-row">
                                     <span className="alert-summary-type">{item.type}</span>
                                     <span
                                         className="alert-summary-count"
                                         style={{
-                                            background: item.count > 0 ? item.color + '20' : '#F1F5F9',
+                                            background: item.count > 0 ? item.color + '20' : 'var(--bg)',
                                             color: item.count > 0 ? item.color : '#94A3B8',
                                         }}
                                     >

@@ -10,9 +10,13 @@
   --primary-dark: #2563EB;
   --primary-light: #EFF6FF;
   --success: #10B981;
+  --success-light: #F0FDF4;
   --warning: #F59E0B;
+  --warning-light: #FFFBEB;
   --danger: #EF4444;
+  --danger-light: #FEF2F2;
   --purple: #8B5CF6;
+  --purple-light: #F5F3FF;
   --pink: #EC4899;
 
   --bg: #F1F5F9;
@@ -1182,8 +1186,8 @@ input {
   align-items: center;
   gap: 8px;
   padding: 8px 14px;
-  background: #F0FDF4;
-  border: 1px solid #BBF7D0;
+  background: var(--success-light);
+  border: 1px solid rgba(16, 185, 129, 0.3);
   border-radius: 20px;
   font-size: 13px;
   font-weight: 500;
@@ -2014,14 +2018,14 @@ input {
 }
 
 .connection-status.connected {
-  background: #F0FDF4;
-  border: 1px solid #BBF7D0;
+  background: var(--success-light);
+  border: 1px solid rgba(16, 185, 129, 0.3);
   color: #059669;
 }
 
 .connection-status.disconnected {
-  background: #FEF2F2;
-  border: 1px solid #FECACA;
+  background: var(--danger-light);
+  border: 1px solid rgba(239, 68, 68, 0.3);
   color: #DC2626;
 }
 
@@ -2129,10 +2133,10 @@ input {
   font-size: 12px;
   font-weight: 500;
   color: var(--success);
-  background: #F0FDF4;
+  background: var(--success-light);
   padding: 4px 10px;
   border-radius: 20px;
-  border: 1px solid #BBF7D0;
+  border: 1px solid rgba(16, 185, 129, 0.3);
 }
 
 /* RFID table extras */
@@ -2182,8 +2186,8 @@ input {
   display: inline-flex;
   align-items: center;
   padding: 2px 9px;
-  background: #F0F4FF;
-  color: #4F46E5;
+  background: var(--purple-light);
+  color: #7C3AED;
   border-radius: 20px;
   font-size: 12px;
   font-weight: 600;
@@ -2193,7 +2197,7 @@ input {
   display: inline-flex;
   align-items: center;
   padding: 2px 9px;
-  background: #EFF6FF;
+  background: var(--primary-light);
   color: var(--primary);
   border-radius: 20px;
   font-size: 12px;
@@ -2211,12 +2215,12 @@ input {
 }
 
 .action-on {
-  background: #F0FDF4;
+  background: var(--success-light);
   color: #059669;
 }
 
 .action-off {
-  background: #FEF2F2;
+  background: var(--danger-light);
   color: #DC2626;
 }
 
@@ -3256,7 +3260,7 @@ input {
 }
 
 .map-bus-card.selected {
-  background: #EFF6FF;
+  background: var(--primary-light);
   border-color: var(--primary);
 }
 
@@ -3395,11 +3399,11 @@ input {
   gap: 6px;
   margin-top: 8px;
   padding: 8px 10px;
-  background: #FFFBEB;
-  border: 1px solid #FDE68A;
+  background: var(--warning-light);
+  border: 1px solid rgba(245, 158, 11, 0.3);
   border-radius: 8px;
   font-size: 12px;
-  color: #92400E;
+  color: #D97706;
   font-weight: 500;
 }
 
@@ -3430,7 +3434,7 @@ input {
 .bus-popup-id {
   font-size: 13px;
   font-weight: 700;
-  color: #0F172A;
+  color: var(--text-primary);
 }
 
 .bus-popup-status {
@@ -3450,11 +3454,11 @@ input {
   align-items: center;
   gap: 8px;
   font-size: 13px;
-  color: #374151;
+  color: var(--text-secondary);
 }
 
 .popup-row svg {
-  color: #94A3B8;
+  color: var(--text-muted);
   flex-shrink: 0;
 }
 
@@ -3505,14 +3509,14 @@ input {
 }
 
 .att-live-btn.live {
-  background: #F0FDF4;
+  background: var(--success-light);
   color: #059669;
-  border: 1px solid #BBF7D0;
+  border: 1px solid rgba(16, 185, 129, 0.3);
 }
 
 .att-live-btn.paused {
-  background: #F1F5F9;
-  color: #64748B;
+  background: var(--bg);
+  color: var(--text-muted);
   border: 1px solid var(--border);
 }
 
@@ -4211,3 +4215,300 @@ input {
   background: #94A3B8;
   animation: none;
 }
+
+/* ============================================================
+   RESPONSIVE OPTIMIZATIONS (MOBILE & TABLET)
+   ============================================================ */
+
+@media (max-width: 1024px) {
+  /* Ensure Modals aren't too big and are scrollable */
+  .modal {
+    max-width: 95vw !important;
+    max-height: 90vh !important;
+    overflow-y: auto !important;
+  }
+}
+
+@media (max-width: 768px) {
+  /* CRUD Page Headers */
+  .page-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 12px !important;
+  }
+  
+  .page-header > div:last-child {
+    width: 100% !important;
+    justify-content: flex-start !important;
+    flex-wrap: wrap;
+  }
+  
+  /* CRUD Toolbar */
+  .crud-toolbar {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 12px !important;
+  }
+  
+  .crud-search-wrap {
+    width: 100% !important;
+  }
+  
+  /* Make Data Tables scrollable horizontally */
+  .table-wrapper {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    border-radius: 10px;
+    margin-bottom: 16px;
+    width: 100%;
+  }
+  
+  .data-table {
+    min-width: 800px !important; /* Force horizontal scroll instead of squishing */
+  }
+  
+  /* Modal Grid: make 2-columns become 1-column */
+  .modal-grid {
+    grid-template-columns: 1fr !important;
+  }
+  
+  /* Pagination / Footer */
+  .pagination {
+    flex-wrap: wrap !important;
+    justify-content: center !important;
+  }
+  
+  /* Dashboard / Alert KPI Strips */
+  .kpi-grid, .kpi-strip, .alerts-kpi-strip, .dashboard-stats, .dashboard-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+  
+  /* Dashboard Layout */
+  .dashboard-bottom {
+    flex-direction: column !important;
+  }
+  
+  .dashboard-right-panel {
+    width: 100% !important;
+  }
+  
+  /* Login grid */
+  .login-card {
+    padding: 24px 20px !important;
+  }
+  
+  /* Parent / Driver View */
+  .parent-view-container, .driver-view-container {
+    padding: 12px !important;
+  }
+
+  /* Form groups */
+  .form-group-full {
+    grid-column: span 1 !important;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Smaller phones */
+  .kpi-grid, .kpi-strip, .alerts-kpi-strip, .dashboard-stats, .dashboard-grid {
+    grid-template-columns: 1fr !important;
+  }
+  
+  .page-title {
+    font-size: 20px !important;
+  }
+  
+  .btn-primary, .btn-secondary, .btn-save, .btn-cancel, .btn-delete, .btn-filter {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+  
+  .modal-footer {
+    flex-direction: column-reverse !important;
+  }
+  
+  .modal-footer button {
+    width: 100% !important;
+    margin-left: 0 !important;
+    margin-bottom: 8px !important;
+  }
+
+  .modal-footer button:first-child {
+    margin-bottom: 0 !important;
+  }
+}
+
+/* ============================================================
+   DARK THEME (CSS Variables Strategy)
+   ============================================================ */
+html.dark-theme {
+  --bg: #0F172A;
+  --surface: #1E293B;
+  --surface-hover: #334155;
+  --border: #334155;
+  --border-light: #1E293B;
+
+  --primary-light: rgba(59, 130, 246, 0.15);
+  --success-light: rgba(16, 185, 129, 0.15);
+  --warning-light: rgba(245, 158, 11, 0.15);
+  --danger-light: rgba(239, 68, 68, 0.15);
+  --purple-light: rgba(139, 92, 246, 0.15);
+
+  --text-primary: #F8FAFC;
+  --text-secondary: #CBD5E1;
+  --text-muted: #94A3B8;
+
+  --sidebar-bg: #0B1120;
+  --sidebar-hover: rgba(255, 255, 255, 0.05);
+  
+  color-scheme: dark;
+  background-color: var(--bg);
+  color: var(--text-primary);
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--text-primary);
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* Subtle fix for dark shadows */
+html.dark-theme .modal,
+html.dark-theme .topbar,
+html.dark-theme .admin-sidebar,
+html.dark-theme .notif-dropdown,
+html.dark-theme .profile-dropdown {
+  box-shadow: 0 4px 24px rgba(0,0,0,0.4) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* ── Dark Mode: Badge & Status Overrides ── */
+
+/* Connection status badges */
+html.dark-theme .connection-status.connected {
+  background: rgba(16, 185, 129, 0.15);
+  border-color: rgba(16, 185, 129, 0.3);
+  color: #34D399;
+}
+
+html.dark-theme .connection-status.disconnected {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #F87171;
+}
+
+/* Realtime badge */
+html.dark-theme .realtime-badge {
+  background: rgba(16, 185, 129, 0.12);
+  border-color: rgba(16, 185, 129, 0.25);
+  color: #34D399;
+}
+
+/* Status live */
+html.dark-theme .status-live {
+  background: rgba(16, 185, 129, 0.12);
+  border-color: rgba(16, 185, 129, 0.25);
+}
+
+/* Grade badge */
+html.dark-theme .grade-badge {
+  background: rgba(79, 70, 229, 0.15);
+  color: #A5B4FC;
+}
+
+/* Bus badge */
+html.dark-theme .bus-badge {
+  background: rgba(59, 130, 246, 0.15);
+  color: #93C5FD;
+}
+
+/* Action badges (lên xe / xuống xe) */
+html.dark-theme .action-on {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34D399;
+}
+
+html.dark-theme .action-off {
+  background: rgba(239, 68, 68, 0.15);
+  color: #F87171;
+}
+
+/* Abnormal row */
+html.dark-theme .abnormal-row td {
+  background: rgba(239, 68, 68, 0.08) !important;
+}
+
+/* KPI cards — ensure text on dark bg is readable */
+html.dark-theme .att-kpi-card {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+html.dark-theme .att-kpi-num {
+  filter: brightness(1.2);
+}
+
+/* Shadows get darker in dark mode */
+html.dark-theme .card {
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* Date inputs in dark mode */
+html.dark-theme .att-date-input {
+  color-scheme: dark;
+}
+
+/* Toast dark fix */
+html.dark-theme .att-toast-info {
+  background: rgba(59, 130, 246, 0.2);
+  color: #93C5FD;
+}
+
+/* Empty row text */
+html.dark-theme .empty-row {
+  color: var(--text-muted);
+}
+
+/* Sidebar - ensure dark sidebar stays consistent */
+html.dark-theme .admin-sidebar {
+  background: var(--sidebar-bg) !important;
+}
+
+/* ── Dark Mode: LiveMap / Leaflet overrides ── */
+
+/* Leaflet popups */
+html.dark-theme .leaflet-popup-content-wrapper {
+  background: var(--surface) !important;
+  color: var(--text-primary) !important;
+}
+
+html.dark-theme .leaflet-popup-tip {
+  background: var(--surface) !important;
+}
+
+/* Map legend overlay */
+html.dark-theme .map-legend {
+  background: var(--surface) !important;
+  border-color: var(--border) !important;
+}
+
+/* Map connection badge */
+html.dark-theme .map-connection-badge {
+  background: var(--surface) !important;
+  border-color: var(--border) !important;
+  color: var(--text-secondary) !important;
+}
+
+/* Status badge in sidebar (inline bg via STATUS_CFG is already var-based) */
+html.dark-theme .status-badge {
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+/* Detail warning in dark */
+html.dark-theme .detail-warning {
+  color: #FBBF24;
+}
+
+/* Scrollbar in dark mode */
+html.dark-theme .map-bus-list::-webkit-scrollbar-thumb {
+  background: var(--border);
+}

@@ -67,9 +67,9 @@ interface BusDisplay extends BusData {
 }
 
 const STATUS_CFG: Record<string, { label: string; color: string; bg: string; hex: string }> = {
-    active: { label: 'Đang chạy', color: '#059669', bg: '#F0FDF4', hex: '#10B981' },
-    idle: { label: 'Dừng chờ', color: '#6B7280', bg: '#F9FAFB', hex: '#9CA3AF' },
-    offline: { label: 'Offline', color: '#DC2626', bg: '#FEF2F2', hex: '#EF4444' },
+    active: { label: 'Đang chạy', color: '#059669', bg: 'var(--success-light)', hex: '#10B981' },
+    idle: { label: 'Dừng chờ', color: '#6B7280', bg: 'var(--surface-hover)', hex: '#9CA3AF' },
+    offline: { label: 'Offline', color: '#DC2626', bg: 'var(--danger-light)', hex: '#EF4444' },
 };
 
 // default school
@@ -591,26 +591,26 @@ const LiveMap: React.FC = () => {
                             )}
 
                             {/* Danh sách học sinh đã quẹt thẻ hôm nay */}
-                            <div style={{ marginTop: 14, borderTop: '1px solid #F1F5F9', paddingTop: 12 }}>
+                            <div style={{ marginTop: 14, borderTop: '1px solid var(--border)', paddingTop: 12 }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
                                     <GraduationCap size={13} color="#7c3aed" />
-                                    <p style={{ fontSize: 12, fontWeight: 700, color: '#374151', margin: 0 }}>Học sinh quẹt thẻ hôm nay</p>
-                                    <span style={{ marginLeft: 'auto', fontSize: 10, background: '#ede9fe', color: '#7c3aed', padding: '2px 7px', borderRadius: 20, fontWeight: 700 }}>
+                                    <p style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>Học sinh quẹt thẻ hôm nay</p>
+                                    <span style={{ marginLeft: 'auto', fontSize: 10, background: 'var(--purple-light)', color: '#7c3aed', padding: '2px 7px', borderRadius: 20, fontWeight: 700 }}>
                                         {busStudents.length}
                                     </span>
                                 </div>
                                 {loadingStudents ? (
                                     <div style={{ textAlign: 'center', padding: '10px 0', color: '#94a3b8', fontSize: 12 }}>Đang tải...</div>
                                 ) : busStudents.length === 0 ? (
-                                    <div style={{ textAlign: 'center', padding: '10px 0', color: '#94a3b8', fontSize: 12 }}>Chưa có học sinh quẹt thẻ</div>
+                                    <div style={{ textAlign: 'center', padding: '10px 0', color: 'var(--text-muted)', fontSize: 12 }}>Chưa có học sinh quẹt thẻ</div>
                                 ) : (
                                     <div style={{ maxHeight: 180, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 6 }}>
                                         {busStudents.map((item, i) => (
                                             <div key={i} style={{
                                                 display: 'flex', alignItems: 'center', gap: 8,
                                                 padding: '7px 9px', borderRadius: 8,
-                                                background: item.action_type === 'Boarding' ? '#f0fdf4' : '#eff6ff',
-                                                border: `1px solid ${item.action_type === 'Boarding' ? '#bbf7d0' : '#bfdbfe'}`,
+                                                background: item.action_type === 'Boarding' ? 'var(--success-light)' : 'var(--primary-light)',
+                                                border: `1px solid ${item.action_type === 'Boarding' ? 'rgba(16,185,129,0.3)' : 'rgba(59,130,246,0.3)'}`,
                                             }}>
                                                 <div style={{
                                                     width: 26, height: 26, borderRadius: 8, flexShrink: 0,
@@ -624,7 +624,7 @@ const LiveMap: React.FC = () => {
                                                     <p style={{ margin: 0, fontSize: 11, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                                         {item.student.fullName}
                                                     </p>
-                                                    <p style={{ margin: '1px 0 0', fontSize: 10, color: '#64748b' }}>
+                                                    <p style={{ margin: '1px 0 0', fontSize: 10, color: 'var(--text-muted)' }}>
                                                         {item.student.class} · {item.student.studentCode}
                                                     </p>
                                                 </div>
@@ -676,10 +676,10 @@ const BusPopup: React.FC<{ bus: BusDisplay; isSelected?: boolean; students?: any
                 <div className="popup-row"><Users size={13} /><span>Sức chứa: {bus.capacity} học sinh</span></div>
                 
                 {isSelected && (
-                    <div style={{ marginTop: 10, borderTop: '1px dashed #cbd5e1', paddingTop: 10 }}>
+                    <div style={{ marginTop: 10, borderTop: '1px dashed var(--border)', paddingTop: 10 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
                             <GraduationCap size={13} color="#7c3aed" />
-                            <p style={{ fontSize: 12, fontWeight: 700, color: '#374151', margin: 0 }}>Học sinh trên xe</p>
+                            <p style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>Học sinh trên xe</p>
                         </div>
                         {loadingStudents ? (
                             <div style={{ fontSize: 11, color: '#64748b', textAlign: 'center' }}>Đang tải...</div>
@@ -689,13 +689,13 @@ const BusPopup: React.FC<{ bus: BusDisplay; isSelected?: boolean; students?: any
                                     <div key={idx} style={{ 
                                         display: 'flex', justifyContent: 'space-between', alignItems: 'center', 
                                         fontSize: 11, padding: '5px 8px', 
-                                        background: item.action_type === 'Boarding' ? '#f0fdf4' : '#eff6ff', 
-                                        border: `1px solid ${item.action_type === 'Boarding' ? '#bbf7d0' : '#bfdbfe'}`,
+                                        background: item.action_type === 'Boarding' ? 'var(--success-light)' : 'var(--primary-light)', 
+                                        border: `1px solid ${item.action_type === 'Boarding' ? 'rgba(16,185,129,0.3)' : 'rgba(59,130,246,0.3)'}`,
                                         borderRadius: 6 
                                     }}>
                                         <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, flex: 1 }}>
-                                            <span style={{ fontWeight: 600, color: '#1e293b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.student.fullName}</span>
-                                            <span style={{ fontSize: 10, color: '#64748b' }}>{item.student.class}</span>
+                                            <span style={{ fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.student.fullName}</span>
+                                            <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>{item.student.class}</span>
                                         </div>
                                         <span style={{ fontWeight: 700, fontSize: 10, color: item.action_type === 'Boarding' ? '#059669' : '#2563eb', marginLeft: 8 }}>
                                             {item.action_type === 'Boarding' ? '↑ Lên' : '↓ Xuống'}

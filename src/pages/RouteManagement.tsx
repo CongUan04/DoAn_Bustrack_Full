@@ -214,10 +214,10 @@ const RouteManagement: React.FC = () => {
                 transition: 'width 0.3s ease',
             }}>
                 {/* Header */}
-                <div style={{ padding: '20px 20px 16px', borderBottom: '1px solid #F1F5F9' }}>
+                <div style={{ padding: '20px 20px 16px', borderBottom: '1px solid var(--border)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                            <div style={{ width: 36, height: 36, background: '#EFF6FF', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <div style={{ width: 36, height: 36, background: 'var(--primary-light)', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                 <Route size={18} color="#2563EB" />
                             </div>
                             <div>
@@ -240,13 +240,13 @@ const RouteManagement: React.FC = () => {
                     <AnimatePresence>
                         {success && (
                             <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
-                                style={{ marginTop: 10, padding: '8px 12px', background: '#F0FDF4', borderRadius: 8, fontSize: 13, color: '#059669', border: '1px solid #BBF7D0' }}>
+                                style={{ marginTop: 10, padding: '8px 12px', background: 'var(--success-light)', borderRadius: 8, fontSize: 13, color: 'var(--success)', border: '1px solid rgba(16,185,129,0.3)' }}>
                                 ✓ {success}
                             </motion.div>
                         )}
                         {error && (
                             <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
-                                style={{ marginTop: 10, padding: '8px 12px', background: '#FEF2F2', borderRadius: 8, fontSize: 13, color: '#DC2626', border: '1px solid #FECACA' }}>
+                                style={{ marginTop: 10, padding: '8px 12px', background: 'var(--danger-light)', borderRadius: 8, fontSize: 13, color: 'var(--danger)', border: '1px solid rgba(239,68,68,0.3)' }}>
                                 ✗ {error}
                             </motion.div>
                         )}
@@ -259,7 +259,7 @@ const RouteManagement: React.FC = () => {
                         {isFormOpen && (
                             <motion.div
                                 initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
-                                style={{ background: '#F8FAFC', borderRadius: 12, padding: 16, marginBottom: 16, border: '1px solid #E2E8F0' }}
+                                style={{ background: 'var(--surface-hover)', borderRadius: 12, padding: 16, marginBottom: 16, border: '1px solid var(--border)' }}
                             >
                                 {/* Form header */}
                                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
@@ -310,7 +310,7 @@ const RouteManagement: React.FC = () => {
                                                 style={{
                                                     flex: 1, padding: '6px 4px', borderRadius: 7, border: '1.5px solid',
                                                     borderColor: mapMode === btn.mode ? '#2563EB' : '#E2E8F0',
-                                                    background: mapMode === btn.mode ? '#EFF6FF' : 'white',
+                                                    background: mapMode === btn.mode ? 'var(--primary-light)' : 'var(--surface)',
                                                     color: mapMode === btn.mode ? '#2563EB' : '#6B7280',
                                                     fontSize: 10, flexShrink: 0, cursor: 'pointer',
                                                 }}
@@ -346,7 +346,7 @@ const RouteManagement: React.FC = () => {
                                                     animate={{ opacity: 1, scale: 1 }}
                                                     onClick={() => setSelectedStopIdx(idx === selectedStopIdx ? null : idx)}
                                                     style={{
-                                                        background: selectedStopIdx === idx ? '#EFF6FF' : 'white',
+                                                        background: selectedStopIdx === idx ? 'var(--primary-light)' : 'var(--surface)',
                                                         border: `1.5px solid ${selectedStopIdx === idx ? '#BFDBFE' : '#E2E8F0'}`,
                                                         borderRadius: 8, cursor: 'pointer',
                                                     }}
@@ -444,14 +444,14 @@ const RouteManagement: React.FC = () => {
                                     <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
                                         <button
                                             onClick={e => { e.stopPropagation(); openEdit(route); }}
-                                            style={{ background: '#F1F5F9', border: 'none', borderRadius: 6, padding: '5px 7px', cursor: 'pointer', color: '#374151' }}
+                                            style={{ background: 'var(--bg)', border: 'none', borderRadius: 6, padding: '5px 7px', cursor: 'pointer', color: 'var(--text-secondary)' }}
                                             title="Chỉnh sửa"
                                         >
                                             <Edit3 size={13} />
                                         </button>
                                         <button
                                             onClick={e => { e.stopPropagation(); deleteRoute(route._id); }}
-                                            style={{ background: '#FEF2F2', border: 'none', borderRadius: 6, padding: '5px 7px', cursor: 'pointer', color: '#EF4444' }}
+                                            style={{ background: 'var(--danger-light)', border: 'none', borderRadius: 6, padding: '5px 7px', cursor: 'pointer', color: 'var(--danger)' }}
                                             title="Xóa"
                                         >
                                             <Trash2 size={13} />
@@ -467,14 +467,14 @@ const RouteManagement: React.FC = () => {
                                             initial={{ height: 0, opacity: 0 }}
                                             animate={{ height: 'auto', opacity: 1 }}
                                             exit={{ height: 0, opacity: 0 }}
-                                            style={{ borderTop: '1px solid #F1F5F9', padding: '8px 14px 12px' }}
+                                            style={{ borderTop: '1px solid var(--border)', padding: '8px 14px 12px' }}
                                         >
                                             {route.stops.length === 0 ? (
                                                 <p style={{ fontSize: 12, color: '#94A3B8', textAlign: 'center' }}>Chưa có điểm dừng</p>
                                             ) : (
                                                 <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                                                     {[...route.stops].sort((a, b) => a.order - b.order).map((stop, si) => (
-                                                        <div key={si} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 6px', borderRadius: 7, background: '#F8FAFC' }}>
+                                                        <div key={si} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 6px', borderRadius: 7, background: 'var(--surface-hover)' }}>
                                                             <span style={{
                                                                 width: 20, height: 20, background: color, color: 'white',
                                                                 borderRadius: '50%', fontSize: 10, fontWeight: 700,
@@ -585,7 +585,7 @@ const RouteManagement: React.FC = () => {
                                             <p style={{ fontSize: 11, color: '#64748B' }}>{stop.lat.toFixed(5)}, {stop.lng.toFixed(5)}</p>
                                             <button
                                                 onClick={() => removeStop(idx)}
-                                                style={{ marginTop: 6, padding: '4px 10px', background: '#FEF2F2', color: '#EF4444', border: 'none', borderRadius: 6, fontSize: 12, cursor: 'pointer' }}
+                                                style={{ marginTop: 6, padding: '4px 10px', background: 'var(--danger-light)', color: 'var(--danger)', border: 'none', borderRadius: 6, fontSize: 12, cursor: 'pointer' }}
                                             >
                                                 🗑 Xóa điểm này
                                             </button>

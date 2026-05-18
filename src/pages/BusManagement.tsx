@@ -50,7 +50,7 @@ const CopyBtn: React.FC<{ text: string }> = ({ text }) => {
     return (
         <button onClick={handle} title="Copy" style={{
             display: 'inline-flex', alignItems: 'center', gap: 4,
-            background: copied ? '#DCFCE7' : '#F1F5F9',
+            background: copied ? 'var(--success-light)' : 'var(--bg)',
             color: copied ? '#16A34A' : '#64748B',
             border: 'none', borderRadius: 6, padding: '3px 8px',
             cursor: 'pointer', fontSize: 11, fontWeight: 600,
@@ -357,7 +357,7 @@ const BusManagement: React.FC = () => {
                 {/* Hướng dẫn copy ID */}
                 <div style={{
                     display: 'flex', alignItems: 'flex-start', gap: 10,
-                    padding: '10px 16px', background: '#FFFBEB',
+                    padding: '10px 16px', background: 'var(--warning-light)',
                     borderBottom: '1px solid #FDE68A',
                     fontSize: 12.5, color: '#92400E', lineHeight: 1.5,
                 }}>
@@ -373,7 +373,7 @@ const BusManagement: React.FC = () => {
                         <thead>
                             <tr>
                                 <th>STT</th>
-                                <th>MongoDB ID <span style={{ color: '#F59E0B', fontSize: 10 }}>← ESP32</span></th>
+                                <th>MongoDB ID <span style={{ color: 'var(--warning)', fontSize: 10 }}>← ESP32</span></th>
                                 <th>Biển số</th>
                                 <th>Tên xe</th>
                                 <th>MAC ESP32</th>
@@ -413,7 +413,7 @@ const BusManagement: React.FC = () => {
                                             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                                                 <code style={{
                                                     fontSize: 11, fontFamily: 'Consolas, monospace',
-                                                    background: '#F5F3FF', border: '1px solid #DDD6FE',
+                                                    background: 'var(--purple-light)', border: '1px solid rgba(139, 92, 246, 0.3)',
                                                     borderRadius: 4, padding: '2px 6px', color: '#7C3AED',
                                                 }}>
                                                     {bus._id}
@@ -436,7 +436,7 @@ const BusManagement: React.FC = () => {
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                                                     <code style={{
                                                         fontSize: 11, fontFamily: 'Consolas, monospace',
-                                                        background: '#F1F5F9', borderRadius: 4,
+                                                        background: 'var(--bg)', borderRadius: 4,
                                                         padding: '2px 6px', color: '#374151',
                                                     }}>
                                                         {bus.device_mac_address}
@@ -453,7 +453,7 @@ const BusManagement: React.FC = () => {
                                         <td>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                                                 {bus.isOnline
-                                                    ? <><Wifi size={12} color="#10B981" /><span style={{ fontSize: 12, color: '#059669', fontWeight: 600 }}>Online</span></>
+                                                    ? <><Wifi size={12} color="var(--success)" /><span style={{ fontSize: 12, color: 'var(--success)', fontWeight: 600 }}>Online</span></>
                                                     : <><WifiOff size={12} color="#9CA3AF" /><span style={{ fontSize: 12, color: '#6B7280' }}>Offline</span></>
                                                 }
                                             </div>

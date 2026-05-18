@@ -33,9 +33,9 @@ const SEV: Record<Severity, {
     label: string; color: string; bg: string; border: string;
     rowBg: string; icon: React.ElementType;
 }> = {
-    danger: { label: 'Nguy hiểm', color: '#DC2626', bg: '#FEF2F2', border: '#FECACA', rowBg: 'rgba(254,226,226,0.55)', icon: AlertTriangle },
-    warning: { label: 'Cảnh báo', color: '#D97706', bg: '#FFFBEB', border: '#FDE68A', rowBg: 'rgba(254,243,199,0.5)', icon: AlertCircle },
-    info: { label: 'Thông tin', color: '#2563EB', bg: '#EFF6FF', border: '#BFDBFE', rowBg: 'rgba(239,246,255,0.5)', icon: Info },
+    danger: { label: 'Nguy hiểm', color: 'var(--danger)', bg: 'var(--danger-light)', border: 'rgba(239, 68, 68, 0.3)', rowBg: 'rgba(239,68,68,0.1)', icon: AlertTriangle },
+    warning: { label: 'Cảnh báo', color: 'var(--warning)', bg: 'var(--warning-light)', border: 'rgba(245, 158, 11, 0.3)', rowBg: 'rgba(245,158,11,0.1)', icon: AlertCircle },
+    info: { label: 'Thông tin', color: 'var(--primary)', bg: 'var(--primary-light)', border: 'rgba(59, 130, 246, 0.3)', rowBg: 'rgba(59,130,246,0.1)', icon: Info },
 };
 
 const TYPE_LABELS: Record<string, string> = {
@@ -166,14 +166,14 @@ const AlertsPage: React.FC = () => {
             {/* KPI Strip */}
             <div className="alerts-kpi-strip">
                 {[
-                    { label: 'Nguy hiểm chưa xử lý', value: dangerCount, icon: AlertTriangle, color: '#DC2626', bg: '#FEF2F2', border: '#FECACA' },
-                    { label: 'Cảnh báo chưa xử lý', value: warningCount, icon: AlertCircle, color: '#D97706', bg: '#FFFBEB', border: '#FDE68A' },
-                    { label: 'Thông tin chưa đọc', value: infoCount, icon: Info, color: '#2563EB', bg: '#EFF6FF', border: '#BFDBFE' },
-                    { label: 'Đã xử lý', value: resolvedCount, icon: CheckCircle2, color: '#059669', bg: '#F0FDF4', border: '#BBF7D0' },
-                    { label: 'Tổng cảnh báo', value: totalCount, icon: Bell, color: '#7C3AED', bg: '#F5F3FF', border: '#DDD6FE' },
+                    { label: 'Nguy hiểm chưa xử lý', value: dangerCount, icon: AlertTriangle, color: 'var(--danger)', bg: 'var(--danger-light)', border: 'rgba(239, 68, 68, 0.3)' },
+                    { label: 'Cảnh báo chưa xử lý', value: warningCount, icon: AlertCircle, color: 'var(--warning)', bg: 'var(--warning-light)', border: 'rgba(245, 158, 11, 0.3)' },
+                    { label: 'Thông tin chưa đọc', value: infoCount, icon: Info, color: 'var(--primary)', bg: 'var(--primary-light)', border: 'rgba(59, 130, 246, 0.3)' },
+                    { label: 'Đã xử lý', value: resolvedCount, icon: CheckCircle2, color: 'var(--success)', bg: 'var(--success-light)', border: 'rgba(16, 185, 129, 0.3)' },
+                    { label: 'Tổng cảnh báo', value: totalCount, icon: Bell, color: 'var(--purple)', bg: 'var(--purple-light)', border: 'rgba(139, 92, 246, 0.3)' },
                 ].map(k => (
                     <motion.div key={k.label} className="alerts-kpi-card"
-                        style={{ borderColor: k.border, background: `linear-gradient(135deg, white, ${k.bg})` }}
+                        style={{ borderColor: k.border, background: `linear-gradient(135deg, var(--surface), ${k.bg})` }}
                         whileHover={{ y: -2, boxShadow: `0 8px 20px ${k.color}22` }}>
                         <div className="alerts-kpi-icon" style={{ background: k.bg, color: k.color }}><k.icon size={18} /></div>
                         <div>

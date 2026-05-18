@@ -37,6 +37,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     role: string;
                     phone?: string;
                     isEmailSet?: boolean;
+                    telegramChatId?: string;
                     token: string;
                 };
             };
@@ -56,6 +57,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 fullName: payload.fullName,
                 role: mappedRole,
                 isEmailSet: payload.isEmailSet ?? true,
+                telegramChatId: payload.telegramChatId,
             };
 
             // Lưu vào state + localStorage

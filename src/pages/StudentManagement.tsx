@@ -296,9 +296,9 @@ const StudentModal: React.FC<{
                                 </button>
                             </div>
                             
-                            <div style={{ background: '#F8FAFC', padding: '12px 16px', borderRadius: 8, border: '1px solid #E2E8F0', fontSize: 13 }}>
+                            <div style={{ background: 'var(--surface-hover)', padding: '12px 16px', borderRadius: 8, border: '1px solid var(--border)', fontSize: 13 }}>
                                 {!(form.fatherPhone || form.motherPhone) ? (
-                                    <span style={{ color: '#EF4444', display:'flex', alignItems:'center', gap: 6, fontWeight: 500 }}>
+                                    <span style={{ color: 'var(--danger)', display:'flex', alignItems:'center', gap: 6, fontWeight: 500 }}>
                                         <AlertTriangle size={15} /> Chưa có thông tin liên lạc (Bắt buộc)
                                     </span>
                                 ) : (
@@ -333,9 +333,9 @@ const StudentModal: React.FC<{
                                         padding: '8px 14px', borderRadius: 8, border: 'none',
                                         cursor: 'pointer', fontSize: 13, fontWeight: 600,
                                         whiteSpace: 'nowrap',
-                                        background: isWaitingForCard ? '#FEF3C7' : cardScanned ? '#D1FAE5' : '#EFF6FF',
+                                        background: isWaitingForCard ? 'var(--warning-light)' : cardScanned ? 'var(--success-light)' : 'var(--primary-light)',
                                         color: isWaitingForCard ? '#D97706' : cardScanned ? '#059669' : '#2563EB',
-                                        outline: isWaitingForCard ? '2px solid #F59E0B' : 'none',
+                                        outline: isWaitingForCard ? '2px solid var(--warning)' : 'none',
                                     }}
                                 >
                                     {isWaitingForCard ? (
@@ -362,7 +362,7 @@ const StudentModal: React.FC<{
                                     >
                                         <span style={{
                                             width: 8, height: 8, borderRadius: '50%',
-                                            background: '#F59E0B', display: 'inline-block',
+                                            background: 'var(--warning)', display: 'inline-block',
                                             animation: 'pulse 1s infinite'
                                         }} />
                                         Đang chờ quét thẻ... Đưa thẻ vào đầu đọc RFID trên ESP32

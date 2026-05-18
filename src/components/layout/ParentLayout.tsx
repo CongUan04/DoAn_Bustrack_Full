@@ -6,11 +6,12 @@
 import React, { useState } from 'react';
 import { Outlet, Navigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Bus, Bell, LogOut, User, Settings, ChevronDown, Wifi, WifiOff, X, Lock, Mail, Clock } from 'lucide-react';
+import { Bus, Bell, LogOut, Settings, ChevronDown, Wifi, WifiOff, X, Lock, Mail, Clock, Sun, Moon } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useSocket } from '../../contexts/SocketContext';
 import { authAPI } from '../../services/api';
 import { toast } from 'react-toastify';
+import TelegramSettings from '../TelegramSettings';
 
 // ── Quick Profile Modal (parent-specific) ─────────────────────
 const ParentQuickProfile: React.FC<{ onClose: () => void }> = ({ onClose }) => {
@@ -18,6 +19,19 @@ const ParentQuickProfile: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     const [form, setForm] = useState({ email: '', currentPassword: '', newPassword: '', confirmPassword: '' });
     const [loading, setLoading] = useState(false);
     const [msg, setMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+    const [isDarkMode, setIsDarkMode] = useState(() => document.documentElement.classList.contains('dark-theme'));
+
+    const toggleTheme = () => {
+        const next = !isDarkMode;
+        setIsDarkMode(next);
+        if (next) {
+            document.documentElement.classList.add('dark-theme');
+            localStorage.setItem('theme', 'dark');
+        } else {
+            document.documentElement.classList.remove('dark-theme');
+            localStorage.setItem('theme', 'light');
+        }
+    };
 
     const handleSave = async () => {
         if (form.newPassword && form.newPassword !== form.confirmPassword) {
@@ -59,19 +73,46 @@ const ParentQuickProfile: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                 onClick={(e) => e.stopPropagation()}
                 style={{
                     zIndex: 8001, width: '90%', maxWidth: 440,
-                    background: 'white', borderRadius: 20, padding: '28px',
+                    background: 'var(--surface)', borderRadius: 20, padding: '28px',
                     boxShadow: '0 25px 60px rgba(0,0,0,0.25)',
-                    position: 'relative'
+                    position: 'relative', maxHeight: '90vh', overflowY: 'auto'
                 }}
             >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-                    <div>
-                        <p style={{ margin: 0, fontWeight: 700, fontSize: 18 }}>Thông tin tài khoản</p>
-                        <p style={{ margin: '2px 0 0', fontSize: 12, color: '#64748b' }}>Phụ huynh · {user?.username}</p>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <div style={{ width: 42, height: 42, borderRadius: 12, background: 'linear-gradient(135deg,#7c3aed,#a855f7)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <Settings size={20} color="white" />
+                        </div>
+                        <div>
+                            <p style={{ margin: 0, fontWeight: 700, fontSize: 18, color: 'var(--text-primary)' }}>Cài đặt</p>
+                            <p style={{ margin: '2px 0 0', fontSize: 12, color: 'var(--text-secondary)' }}>Phụ huynh · {user?.username}</p>
+                        </div>
                     </div>
-                    <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b', padding: 4 }}>
+                    <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 6, borderRadius: 8, color: 'var(--text-secondary)' }}>
                         <X size={20} />
                     </button>
+                </div>
+
+                {/* Theme Toggle */}
+                <div style={{ marginBottom: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--surface-hover)', padding: '12px 14px', borderRadius: 12, border: '1px solid var(--border)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <div style={{ width: 34, height: 34, borderRadius: 8, background: 'var(--primary-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)' }}>
+                            {isDarkMode ? <Moon size={16} /> : <Sun size={16} />}
+                        </div>
+                        <div>
+                            <p style={{ margin: 0, fontWeight: 600, fontSize: 13, color: 'var(--text-primary)' }}>Chế độ Tối (Dark Mode)</p>
+                            <p style={{ margin: '2px 0 0', fontSize: 11, color: 'var(--text-secondary)' }}>Giảm chói mắt khi xem ban đêm</p>
+                        </div>
+                    </div>
+                    <div onClick={toggleTheme} style={{
+                        width: 44, height: 24, borderRadius: 12, background: isDarkMode ? '#10B981' : '#cbd5e1',
+                        position: 'relative', cursor: 'pointer', transition: '0.3s'
+                    }}>
+                        <div style={{
+                            width: 20, height: 20, borderRadius: '50%', background: 'white',
+                            position: 'absolute', top: 2, left: isDarkMode ? 22 : 2, transition: '0.3s', boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                        }} />
+                    </div>
                 </div>
 
                 {/* Avatar */}
@@ -100,7 +141,7 @@ const ParentQuickProfile: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                     { key: 'confirmPassword', label: 'Xác nhận mật khẩu', type: 'password', icon: <Lock size={14} />, placeholder: 'Nhập lại mật khẩu mới...' },
                 ].map(f => (
                     <div key={f.key} style={{ marginBottom: 12 }}>
-                        <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 600, color: '#374151', marginBottom: 5 }}>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 5 }}>
                             {f.icon} {f.label}
                             {f.key === 'email' && !user?.isEmailSet && (
                                 <span style={{ marginLeft: 4, fontSize: 10, background: '#fef3c7', color: '#92400e', padding: '1px 6px', borderRadius: 20, fontWeight: 700 }}>Chưa cập nhật</span>
@@ -113,9 +154,10 @@ const ParentQuickProfile: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                             placeholder={f.placeholder}
                             style={{
                                 width: '100%', padding: '9px 12px', borderRadius: 10, boxSizing: 'border-box',
-                                border: `1.5px solid ${f.key === 'email' && !user?.isEmailSet ? '#fbbf24' : '#e2e8f0'}`,
+                                border: `1.5px solid ${f.key === 'email' && !user?.isEmailSet ? 'rgba(245,158,11,0.4)' : 'var(--border)'}`,
                                 fontSize: 13, outline: 'none',
-                                background: f.key === 'email' && !user?.isEmailSet ? '#fffbeb' : '#f8fafc',
+                                background: f.key === 'email' && !user?.isEmailSet ? 'var(--warning-light)' : 'var(--bg)',
+                                color: 'var(--text-primary)'
                             }}
                         />
                     </div>
@@ -126,9 +168,9 @@ const ParentQuickProfile: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                         <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
                             style={{
                                 padding: '10px 14px', borderRadius: 10, marginBottom: 14, fontSize: 13, fontWeight: 600,
-                                background: msg.type === 'success' ? '#f0fdf4' : '#fef2f2',
-                                color: msg.type === 'success' ? '#059669' : '#dc2626',
-                                border: `1px solid ${msg.type === 'success' ? '#bbf7d0' : '#fecaca'}`,
+                                background: msg.type === 'success' ? 'var(--success-light)' : 'var(--danger-light)',
+                                color: msg.type === 'success' ? 'var(--success)' : 'var(--danger)',
+                                border: `1px solid ${msg.type === 'success' ? 'rgba(16,185,129,0.3)' : 'rgba(239,68,68,0.3)'}`,
                             }}>
                             {msg.type === 'success' ? '✅ ' : '❌ '}{msg.text}
                         </motion.div>
@@ -136,7 +178,7 @@ const ParentQuickProfile: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                 </AnimatePresence>
 
                 <div style={{ display: 'flex', gap: 10 }}>
-                    <button onClick={onClose} style={{ flex: 1, padding: '10px', borderRadius: 10, border: '1px solid #e2e8f0', background: '#f8fafc', cursor: 'pointer', fontWeight: 600, fontSize: 13 }}>
+                    <button onClick={onClose} style={{ flex: 1, padding: '10px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--surface-hover)', cursor: 'pointer', fontWeight: 600, fontSize: 13, color: 'var(--text-primary)' }}>
                         Huỷ
                     </button>
                     <button onClick={handleSave} disabled={loading} style={{
@@ -147,6 +189,14 @@ const ParentQuickProfile: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                     }}>
                         {loading ? 'Đang lưu...' : 'Lưu thay đổi'}
                     </button>
+                </div>
+
+                {/* ── Cài đặt Telegram ── */}
+                <div style={{ marginTop: 24, paddingTop: 24, borderTop: '1px dashed var(--border)' }}>
+                    <TelegramSettings 
+                        currentChatId={user?.telegramChatId} 
+                        onSaved={(id) => updateUser({ telegramChatId: id || undefined })} 
+                    />
                 </div>
             </motion.div>
             </motion.div>
@@ -182,9 +232,9 @@ const ParentLayout: React.FC = () => {
         const msg = `Con bạn (${studentName}) đã ${action.toUpperCase()} ${licensePlate} lúc ${timeStr}`;
 
         if (action === 'lên xe') {
-            toast.success(msg, { icon: '🚌', autoClose: 6000 });
+            toast.success(msg, { icon: '🚌' as any, autoClose: 6000 });
         } else {
-            toast.info(msg, { icon: '🏫', autoClose: 6000 });
+            toast.info(msg, { icon: '🏫' as any, autoClose: 6000 });
         }
     }, [lastRfidEvent]);
 
@@ -200,11 +250,11 @@ const ParentLayout: React.FC = () => {
     const unread = notifs.filter(n => !readIds.has(n.id)).length;
 
     return (
-        <div style={{ minHeight: '100vh', background: '#f8fafc' }}>
+        <div style={{ minHeight: '100vh', background: 'var(--bg)', color: 'var(--text-primary)' }}>
             {/* Header */}
             <header style={{
-                position: 'sticky', top: 0, zIndex: 100,
-                background: 'white', borderBottom: '1px solid #e2e8f0',
+                position: 'sticky', top: 0, zIndex: 2000,
+                background: 'var(--surface)', borderBottom: '1px solid var(--border)',
                 boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
             }}>
                 <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 20px', height: 60, display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -218,8 +268,8 @@ const ParentLayout: React.FC = () => {
                             <Bus size={18} color="white" />
                         </div>
                         <div>
-                            <p style={{ margin: 0, fontWeight: 800, fontSize: 15, color: '#7c3aed' }}>BusTrack</p>
-                            <p style={{ margin: 0, fontSize: 10, color: '#94a3b8' }}>Phụ huynh</p>
+                            <p style={{ margin: 0, fontWeight: 800, fontSize: 15, color: 'var(--primary)' }}>BusTrack</p>
+                            <p style={{ margin: 0, fontSize: 10, color: 'var(--text-secondary)' }}>Phụ huynh</p>
                         </div>
                     </div>
 
@@ -227,17 +277,17 @@ const ParentLayout: React.FC = () => {
                     <div style={{
                         display: 'flex', alignItems: 'center', gap: 6,
                         padding: '5px 12px', borderRadius: 20, fontSize: 13, fontWeight: 700,
-                        background: '#f1f5f9', color: '#334155', border: '1px solid #e2e8f0', letterSpacing: '0.5px'
+                        background: 'var(--surface-hover)', color: 'var(--text-primary)', border: '1px solid var(--border)', letterSpacing: '0.5px'
                     }}>
-                        <Clock size={14} color="#64748b" />
+                        <Clock size={14} color="var(--text-secondary)" />
                         {currentTime.toLocaleTimeString('vi-VN', { hour12: false })}
                     </div>
 
                     {/* Live status */}
                     <div style={{
                         display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 600,
-                        background: connected ? '#f0fdf4' : '#fef2f2',
-                        color: connected ? '#059669' : '#dc2626',
+                        background: connected ? 'var(--success-light)' : 'var(--danger-light)',
+                        color: connected ? 'var(--success)' : 'var(--danger)',
                         padding: '5px 10px', borderRadius: 20,
                     }}>
                         {connected ? <Wifi size={12} /> : <WifiOff size={12} />}
@@ -249,9 +299,9 @@ const ParentLayout: React.FC = () => {
                         <button
                             onClick={() => { setShowNotif(!showNotif); setShowMenu(false); }}
                             style={{
-                                width: 36, height: 36, borderRadius: 10, border: '1px solid #e2e8f0',
-                                background: '#f8fafc', cursor: 'pointer', display: 'flex',
-                                alignItems: 'center', justifyContent: 'center', color: '#475569', position: 'relative',
+                                width: 36, height: 36, borderRadius: 10, border: '1px solid var(--border)',
+                                background: 'var(--surface-hover)', cursor: 'pointer', display: 'flex',
+                                alignItems: 'center', justifyContent: 'center', color: 'var(--text-primary)', position: 'relative',
                             }}
                         >
                             <Bell size={16} />
@@ -272,28 +322,28 @@ const ParentLayout: React.FC = () => {
                                     animate={{ opacity: 1, y: 0, scale: 1 }}
                                     exit={{ opacity: 0, y: -8, scale: 0.97 }}
                                     style={{
-                                        position: 'absolute', right: 0, top: 44, zIndex: 200,
-                                        width: 300, background: 'white', borderRadius: 14,
-                                        border: '1px solid #e2e8f0', boxShadow: '0 12px 40px rgba(0,0,0,0.15)', overflow: 'hidden',
+                                        position: 'absolute', right: 0, top: 44, zIndex: 2001,
+                                        width: 300, background: 'var(--surface)', borderRadius: 14,
+                                        border: '1px solid var(--border)', boxShadow: '0 12px 40px rgba(0,0,0,0.15)', overflow: 'hidden',
                                     }}
                                 >
-                                    <div style={{ padding: '12px 14px', borderBottom: '1px solid #f1f5f9', fontWeight: 700, fontSize: 13 }}>
+                                    <div style={{ padding: '12px 14px', borderBottom: '1px solid var(--border)', fontWeight: 700, fontSize: 13, color: 'var(--text-primary)' }}>
                                         Thông báo quẹt thẻ
                                     </div>
                                     {notifs.length === 0 ? (
-                                        <div style={{ padding: '20px', textAlign: 'center', color: '#94a3b8', fontSize: 12 }}>Chưa có thông báo</div>
+                                        <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-secondary)', fontSize: 12 }}>Chưa có thông báo</div>
                                     ) : notifs.map(n => (
                                         <div key={n.id}
                                             onClick={() => setReadIds(prev => new Set([...prev, n.id]))}
                                             style={{
-                                                padding: '10px 14px', borderBottom: '1px solid #f8fafc',
-                                                background: readIds.has(n.id) ? 'white' : '#f5f3ff',
+                                                padding: '10px 14px', borderBottom: '1px solid var(--surface-hover)',
+                                                background: readIds.has(n.id) ? 'var(--surface)' : 'var(--primary-light)',
                                                 cursor: 'pointer',
                                             }}>
-                                            <p style={{ margin: 0, fontSize: 12.5, fontWeight: readIds.has(n.id) ? 400 : 600 }}>
+                                            <p style={{ margin: 0, fontSize: 12.5, fontWeight: readIds.has(n.id) ? 400 : 600, color: 'var(--text-primary)' }}>
                                                 {n.action === 'lên xe' ? '🟢' : '🔵'} {n.studentName} — {n.action}
                                             </p>
-                                            <p style={{ margin: '2px 0 0', fontSize: 10, color: '#94a3b8' }}>{n.licensePlate} · {new Date(n.timestamp).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}</p>
+                                            <p style={{ margin: '2px 0 0', fontSize: 10, color: 'var(--text-secondary)' }}>{n.licensePlate} · {new Date(n.timestamp).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}</p>
                                         </div>
                                     ))}
                                 </motion.div>
@@ -307,7 +357,7 @@ const ParentLayout: React.FC = () => {
                             onClick={() => { setShowMenu(!showMenu); setShowNotif(false); }}
                             style={{
                                 display: 'flex', alignItems: 'center', gap: 6, padding: '4px 8px 4px 4px',
-                                borderRadius: 10, border: '1px solid #e2e8f0', background: '#f8fafc', cursor: 'pointer',
+                                borderRadius: 10, border: '1px solid var(--border)', background: 'var(--surface)', cursor: 'pointer',
                             }}
                         >
                             <div style={{
@@ -318,7 +368,7 @@ const ParentLayout: React.FC = () => {
                             }}>
                                 {user?.fullName?.split(' ').pop()?.charAt(0)}
                             </div>
-                            <ChevronDown size={13} color="#94a3b8" style={{ transform: showMenu ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
+                            <ChevronDown size={13} color="var(--text-secondary)" style={{ transform: showMenu ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
                         </button>
 
                         <AnimatePresence>
@@ -328,40 +378,39 @@ const ParentLayout: React.FC = () => {
                                     animate={{ opacity: 1, y: 0, scale: 1 }}
                                     exit={{ opacity: 0, y: -8, scale: 0.97 }}
                                     style={{
-                                        position: 'absolute', right: 0, top: 44, zIndex: 200,
-                                        width: 200, background: 'white', borderRadius: 12,
-                                        border: '1px solid #e2e8f0', boxShadow: '0 12px 40px rgba(0,0,0,0.15)', overflow: 'hidden',
+                                        position: 'absolute', right: 0, top: 44, zIndex: 2001,
+                                        width: 200, background: 'var(--surface)', borderRadius: 12,
+                                        border: '1px solid var(--border)', boxShadow: '0 12px 40px rgba(0,0,0,0.15)', overflow: 'hidden',
                                     }}
                                 >
-                                    <div style={{ padding: '12px 14px', borderBottom: '1px solid #f1f5f9' }}>
-                                        <p style={{ margin: 0, fontSize: 13, fontWeight: 700 }}>{user?.fullName}</p>
-                                        <p style={{ margin: '1px 0 0', fontSize: 11, color: '#64748b' }}>Phụ huynh</p>
+                                    <div style={{ padding: '12px 14px', borderBottom: '1px solid var(--border)' }}>
+                                        <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>{user?.fullName}</p>
+                                        <p style={{ margin: '1px 0 0', fontSize: 11, color: 'var(--text-secondary)' }}>Phụ huynh</p>
                                     </div>
                                     {[
-                                        { icon: <User size={14} />, label: 'Hồ sơ tài khoản', action: () => { setShowProfile(true); setShowMenu(false); } },
-                                        { icon: <Settings size={14} />, label: 'Cài đặt thông báo', action: () => setShowMenu(false) },
+                                        { icon: <Settings size={14} />, label: 'Cài đặt', action: () => { setShowProfile(true); setShowMenu(false); } },
                                     ].map(item => (
                                         <button key={item.label} onClick={item.action}
                                             style={{
                                                 width: '100%', display: 'flex', alignItems: 'center', gap: 10,
                                                 padding: '10px 14px', background: 'none', border: 'none',
-                                                cursor: 'pointer', fontSize: 13, color: '#374151', textAlign: 'left',
+                                                cursor: 'pointer', fontSize: 13, color: 'var(--text-primary)', textAlign: 'left',
                                             }}
-                                            onMouseEnter={e => (e.currentTarget.style.background = '#f8fafc')}
+                                            onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-hover)')}
                                             onMouseLeave={e => (e.currentTarget.style.background = 'none')}
                                         >
-                                            <span style={{ color: '#94a3b8' }}>{item.icon}</span>
+                                            <span style={{ color: 'var(--text-secondary)' }}>{item.icon}</span>
                                             {item.label}
                                         </button>
                                     ))}
-                                    <div style={{ height: 1, background: '#f1f5f9' }} />
+                                    <div style={{ height: 1, background: 'var(--border)' }} />
                                     <button onClick={logout}
                                         style={{
                                             width: '100%', display: 'flex', alignItems: 'center', gap: 10,
                                             padding: '10px 14px', background: 'none', border: 'none',
-                                            cursor: 'pointer', fontSize: 13, color: '#ef4444', textAlign: 'left', marginBottom: 4,
+                                            cursor: 'pointer', fontSize: 13, color: 'var(--danger)', textAlign: 'left', marginBottom: 4,
                                         }}
-                                        onMouseEnter={e => (e.currentTarget.style.background = '#fef2f2')}
+                                        onMouseEnter={e => (e.currentTarget.style.background = 'var(--danger-light)')}
                                         onMouseLeave={e => (e.currentTarget.style.background = 'none')}
                                     >
                                         <LogOut size={14} /> Đăng xuất
@@ -375,7 +424,7 @@ const ParentLayout: React.FC = () => {
 
             {/* Backdrop */}
             {(showMenu || showNotif) && (
-                <div style={{ position: 'fixed', inset: 0, zIndex: 99 }}
+                <div style={{ position: 'fixed', inset: 0, zIndex: 1999 }}
                     onClick={() => { setShowMenu(false); setShowNotif(false); }} />
             )}
 
@@ -386,7 +435,7 @@ const ParentLayout: React.FC = () => {
 
             {/* Page content */}
             <main>
-                <Outlet />
+                <Outlet context={{ openProfile: () => setShowProfile(true) }} />
             </main>
         </div>
     );

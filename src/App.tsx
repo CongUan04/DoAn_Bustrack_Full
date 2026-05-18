@@ -141,6 +141,15 @@ const AppRoutes: React.FC = () => {
 };
 
 const App: React.FC = () => {
+    React.useEffect(() => {
+        const theme = localStorage.getItem('theme');
+        if (theme === 'dark') {
+            document.documentElement.classList.add('dark-theme');
+        } else {
+            document.documentElement.classList.remove('dark-theme');
+        }
+    }, []);
+
     return (
         <AuthProvider>
             <SocketProvider>

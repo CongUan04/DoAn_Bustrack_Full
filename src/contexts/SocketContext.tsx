@@ -47,6 +47,7 @@ interface SocketContextType {
     gpsUpdates: Record<string, GpsUpdate>; // busId → latest GPS
     lastRfidEvent: RfidSwipe | null; // latest RFID event for toast trigger
     lastAlert: any; // latest alert from backend
+    lastStudentStatus: { studentId: string; status: string; studentName: string } | null;
 }
 
 const SOCKET_URL = 'https://bustrack-backend-vq38.onrender.com';
@@ -70,6 +71,7 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     const [gpsUpdates, setGpsUpdates] = useState<Record<string, GpsUpdate>>({});
     const [lastRfidEvent, setLastRfidEvent] = useState<RfidSwipe | null>(null);
     const [lastAlert, setLastAlert] = useState<any>(null);
+    const [lastStudentStatus, setLastStudentStatus] = useState<{ studentId: string; status: string; studentName: string } | null>(null);
 
     // ── Connect / Disconnect ──────────────────────────────────
     // Dependencies [] = socket chỉ tạo 1 lần
@@ -85,7 +87,7 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             setConnected(true);
         });
         s.on('connect_error', (err) => {
-             console.error('[Socket] ❌ Lỗi kết nối:', err.message);
+            console.error('[Socket] ❌ Lỗi kết nối:', err.message);
         });
         s.on('disconnect', (reason) => {
             console.log('[Socket] ❌ Ngắt kết nối. Lý do:', reason);
@@ -150,6 +152,11 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             setLastUpdate(new Date());
         });
 
+        s.on('student_status_update', (data: { studentId: string; status: string; studentName: string }) => {
+            setLastStudentStatus(data);
+            setLastUpdate(new Date());
+        });
+
         return () => {
             s.disconnect();
         };
@@ -157,7 +164,7 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
 
     return (
-        <SocketContext.Provider value={{ kpi, recentSwipes, connected, lastUpdate, gpsUpdates, lastRfidEvent, lastAlert }}>
+        <SocketContext.Provider value={{ kpi, recentSwipes, connected, lastUpdate, gpsUpdates, lastRfidEvent, lastAlert, lastStudentStatus }}>
             {children}
         </SocketContext.Provider>
     );

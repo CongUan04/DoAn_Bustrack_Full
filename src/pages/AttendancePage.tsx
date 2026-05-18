@@ -147,11 +147,11 @@ const AttendancePage: React.FC = () => {
             {/* KPI strip */}
             <div className="att-kpi-strip">
                 {[
-                    { label: 'Tổng lượt hôm nay', value: kpi?.totalToday ?? 0, icon: CreditCard, color: '#2563EB', bg: '#EFF6FF' },
-                    { label: 'Lên xe', value: kpi?.boardingToday ?? 0, icon: ArrowUpCircle, color: '#059669', bg: '#F0FDF4' },
-                    { label: 'Xuống xe', value: kpi?.droppingToday ?? 0, icon: ArrowDownCircle, color: '#DC2626', bg: '#FEF2F2' },
-                    { label: 'Học sinh', value: kpi?.uniqueStudents ?? 0, icon: Users, color: '#7C3AED', bg: '#F5F3FF' },
-                    { label: 'Xe hoạt động', value: kpi?.uniqueBuses ?? 0, icon: Bus, color: '#D97706', bg: '#FFFBEB' },
+                    { label: 'Tổng lượt hôm nay', value: kpi?.totalToday ?? 0, icon: CreditCard, color: 'var(--primary)', bg: 'var(--primary-light)' },
+                    { label: 'Lên xe', value: kpi?.boardingToday ?? 0, icon: ArrowUpCircle, color: 'var(--success)', bg: 'var(--success-light)' },
+                    { label: 'Xuống xe', value: kpi?.droppingToday ?? 0, icon: ArrowDownCircle, color: 'var(--danger)', bg: 'var(--danger-light)' },
+                    { label: 'Học sinh', value: kpi?.uniqueStudents ?? 0, icon: Users, color: 'var(--purple)', bg: 'var(--purple-light)' },
+                    { label: 'Xe hoạt động', value: kpi?.uniqueBuses ?? 0, icon: Bus, color: 'var(--warning)', bg: 'var(--warning-light)' },
                 ].map(k => (
                     <motion.div key={k.label} className="att-kpi-card"
                         style={{ borderLeft: `3px solid ${k.color}`, background: k.bg }}

@@ -1,17 +1,24 @@
-/**
- * ParentLogin.tsx – Trang đăng nhập dành riêng cho Phụ huynh
- * Giao diện thân thiện, màu xanh lá, đăng nhập bằng số điện thoại
- */
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Eye, EyeOff, Users, Lock, Phone, AlertCircle, Loader2, ArrowLeft, Send, CheckCircle2 } from 'lucide-react';
+import { Eye, EyeOff, Users, Lock, Phone, AlertCircle, Loader2, ArrowLeft, Send, CheckCircle2, MapPin, Bell, ShieldCheck } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { authAPI } from '../services/api';
+
+const useIsMobile = () => {
+    const [isMobile, setIsMobile] = useState(window.innerWidth < 900);
+    useEffect(() => {
+        const handleResize = () => setIsMobile(window.innerWidth < 900);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+    return isMobile;
+};
 
 const ParentLogin: React.FC = () => {
     const navigate = useNavigate();
     const { login } = useAuth();
+    const isMobile = useIsMobile();
 
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
@@ -53,6 +60,7 @@ const ParentLogin: React.FC = () => {
         catch (err: any) { setFpError(err.response?.data?.message || 'Có lỗi xảy ra.'); }
         finally { setFpLoading(false); }
     };
+
     const handleOtp = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!fpOtp) return setFpError('Vui lòng nhập mã OTP.');
@@ -61,6 +69,7 @@ const ParentLogin: React.FC = () => {
         catch (err: any) { setFpError(err.response?.data?.message || 'Mã OTP không hợp lệ.'); }
         finally { setFpLoading(false); }
     };
+
     const handleReset = async (e: React.FormEvent) => {
         e.preventDefault();
         if (fpNewPassword.length < 6) return setFpError('Mật khẩu phải từ 6 ký tự.');
@@ -75,84 +84,156 @@ const ParentLogin: React.FC = () => {
     };
 
     const inputStyle = (field: string): React.CSSProperties => ({
-        width: '100%', height: 50, padding: '0 44px',
-        background: focused === field ? '#fff' : '#f8fafc',
+        width: '100%', height: 52, padding: '0 44px',
+        background: focused === field ? '#ffffff' : '#f8fafc',
         border: `2px solid ${focused === field ? '#10B981' : '#e2e8f0'}`,
-        borderRadius: 12, color: '#0f172a', fontSize: 14.5, outline: 'none',
+        borderRadius: 14, color: '#0f172a', fontSize: 14.5, outline: 'none',
         boxShadow: focused === field ? '0 0 0 4px rgba(16,185,129,0.1)' : 'none',
-        transition: 'all 0.2s', fontFamily: 'inherit',
+        transition: 'all 0.2s ease', fontFamily: 'inherit',
     });
 
     return (
         <div style={{
-            minHeight: '100vh', display: 'flex', background: '#f8fafc', position: 'relative', overflow: 'hidden',
+            minHeight: '100vh',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'linear-gradient(135deg, #022c22 0%, #064e3b 40%, #047857 100%)',
+            position: 'relative',
+            overflow: 'hidden',
+            padding: isMobile ? '20px' : '40px'
         }}>
-            {/* Left: Login Form */}
-            <div style={{
-                width: 500, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                padding: '40px 56px',
-                background: 'white',
-                boxShadow: '4px 0 40px rgba(0,0,0,0.06)',
-                position: 'relative', zIndex: 1,
-            }}>
-                <motion.div
-                    initial={{ opacity: 0, x: -30 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-                    style={{ width: '100%' }}
-                >
-                    {/* Logo */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 40 }}>
-                        <div style={{ width: 42, height: 42, borderRadius: 12, background: 'linear-gradient(135deg,#10B981,#059669)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 14px rgba(16,185,129,0.35)' }}>
-                            <Users size={22} color="white" />
+            {/* Animated Background Bubbles */}
+            <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none' }}>
+                <div style={{ position: 'absolute', top: '-10%', left: '-10%', width: '40%', height: '40%', background: 'radial-gradient(circle, rgba(52,211,153,0.15) 0%, transparent 70%)', borderRadius: '50%', filter: 'blur(40px)', animation: 'float 10s ease-in-out infinite' }} />
+                <div style={{ position: 'absolute', bottom: '-20%', right: '-10%', width: '50%', height: '50%', background: 'radial-gradient(circle, rgba(16,185,129,0.2) 0%, transparent 70%)', borderRadius: '50%', filter: 'blur(50px)', animation: 'float 12s ease-in-out infinite reverse' }} />
+                <div style={{ position: 'absolute', inset: 0, opacity: 0.05, backgroundImage: 'linear-gradient(rgba(255,255,255,1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,1) 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
+            </div>
+
+            {/* Main Glassmorphism Card */}
+            <motion.div
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+                style={{
+                    display: 'flex',
+                    flexDirection: isMobile ? 'column' : 'row',
+                    width: '100%',
+                    maxWidth: 1000,
+                    background: 'rgba(255, 255, 255, 0.03)',
+                    backdropFilter: 'blur(24px)',
+                    WebkitBackdropFilter: 'blur(24px)',
+                    borderRadius: 24,
+                    border: '1px solid rgba(255, 255, 255, 0.15)',
+                    boxShadow: '0 30px 60px -12px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.05)',
+                    overflow: 'hidden',
+                    zIndex: 10
+                }}
+            >
+                {/* Left/Top: Decorative Info Panel */}
+                <div style={{
+                    flex: 1,
+                    padding: isMobile ? '32px 24px' : '48px',
+                    background: 'linear-gradient(180deg, rgba(255,255,255,0.05) 0%, transparent 100%)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center',
+                    borderRight: isMobile ? 'none' : '1px solid rgba(255,255,255,0.1)',
+                    borderBottom: isMobile ? '1px solid rgba(255,255,255,0.1)' : 'none',
+                }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 32 }}>
+                        <div style={{ width: 46, height: 46, borderRadius: 14, background: 'linear-gradient(135deg,#34D399,#059669)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 20px rgba(16,185,129,0.4)' }}>
+                            <Users size={24} color="white" />
                         </div>
                         <div>
-                            <p style={{ margin: 0, fontWeight: 800, fontSize: 16, color: '#0f172a' }}>BusTrack</p>
-                            <p style={{ margin: 0, fontSize: 11, color: '#94a3b8' }}>Cổng dành cho Phụ huynh</p>
+                            <h2 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: 'white', letterSpacing: '-0.5px' }}>BusTrack</h2>
+                            <p style={{ margin: 0, fontSize: 12, color: 'rgba(255,255,255,0.6)', fontWeight: 500, letterSpacing: '0.5px', textTransform: 'uppercase' }}>Dành cho Phụ huynh</p>
                         </div>
                     </div>
 
+                    <h1 style={{ margin: '0 0 16px', fontSize: isMobile ? 28 : 36, fontWeight: 800, color: 'white', lineHeight: 1.2 }}>
+                        Đồng hành cùng<br />hành trình của con
+                    </h1>
+                    <p style={{ margin: '0 0 36px', fontSize: 15, color: 'rgba(255,255,255,0.7)', lineHeight: 1.6 }}>
+                        Trải nghiệm sự an tâm tuyệt đối với hệ thống giám sát và thông báo thông minh từ BusTrack.
+                    </p>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                        {[
+                            { icon: <MapPin size={20} />, title: 'Định vị thời gian thực', desc: 'Theo dõi chính xác vị trí xe bus' },
+                            { icon: <Bell size={20} />, title: 'Thông báo tức thì', desc: 'Nhận cảnh báo khi con lên/xuống xe' },
+                            { icon: <ShieldCheck size={20} />, title: 'An tâm tuyệt đối', desc: 'Kết nối trực tiếp với nhà trường & tài xế' },
+                        ].map((feature, idx) => (
+                            <motion.div key={idx} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 + idx * 0.1 }}
+                                style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
+                                <div style={{ width: 40, height: 40, borderRadius: 10, background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#34D399', flexShrink: 0 }}>
+                                    {feature.icon}
+                                </div>
+                                <div>
+                                    <h4 style={{ margin: '0 0 4px', fontSize: 14, fontWeight: 700, color: 'white' }}>{feature.title}</h4>
+                                    <p style={{ margin: 0, fontSize: 13, color: 'rgba(255,255,255,0.5)' }}>{feature.desc}</p>
+                                </div>
+                            </motion.div>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Right/Bottom: Form Panel */}
+                <div style={{
+                    width: isMobile ? '100%' : 480,
+                    flexShrink: 0,
+                    padding: isMobile ? '32px 24px' : '48px',
+                    background: '#ffffff',
+                    position: 'relative'
+                }}>
                     <AnimatePresence mode="wait">
                         {fpFlow === 'none' ? (
                             <motion.div key="login" initial={{ opacity: 0, x: -15 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -15 }} transition={{ duration: 0.3 }}>
-                                <div style={{ marginBottom: 28 }}>
-                                    <h1 style={{ margin: '0 0 6px', fontSize: 26, fontWeight: 800, color: '#0f172a' }}>Chào bạn! 👋</h1>
-                                    <p style={{ margin: 0, fontSize: 14, color: '#64748b' }}>Đăng nhập bằng số điện thoại hoặc email đã đăng ký</p>
+                                <div style={{ marginBottom: 32 }}>
+                                    <h2 style={{ margin: '0 0 8px', fontSize: 26, fontWeight: 800, color: '#0f172a' }}>Chào mừng trở lại! 👋</h2>
+                                    <p style={{ margin: 0, fontSize: 14, color: '#64748b' }}>Đăng nhập bằng số điện thoại để tiếp tục</p>
                                 </div>
 
-                                <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                                <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
                                     <div>
-                                        <label style={{ fontSize: 13, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 7 }}>Số điện thoại / Email</label>
+                                        <label style={{ fontSize: 13, fontWeight: 700, color: '#334155', display: 'block', marginBottom: 8 }}>Số điện thoại</label>
                                         <div style={{ position: 'relative' }}>
-                                            <Phone size={16} style={{ position: 'absolute', left: 15, top: '50%', transform: 'translateY(-50%)', color: focused === 'u' ? '#10B981' : '#94a3b8', transition: 'color 0.2s' }} />
+                                            <Phone size={18} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: focused === 'u' ? '#10B981' : '#94a3b8', transition: 'color 0.2s' }} />
                                             <input type="text" value={username} onChange={e => { setUsername(e.target.value); setError(''); }}
                                                 onFocus={() => setFocused('u')} onBlur={() => setFocused(null)}
-                                                placeholder="VD: 0901234567 hoặc email..."
-                                                style={inputStyle('u')} />
+                                                placeholder="VD: 0901234567..." style={inputStyle('u')} />
                                         </div>
                                     </div>
 
                                     <div>
-                                        <label style={{ fontSize: 13, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 7 }}>Mật khẩu</label>
+                                        <label style={{ fontSize: 13, fontWeight: 700, color: '#334155', display: 'block', marginBottom: 8 }}>Mật khẩu</label>
                                         <div style={{ position: 'relative' }}>
-                                            <Lock size={16} style={{ position: 'absolute', left: 15, top: '50%', transform: 'translateY(-50%)', color: focused === 'p' ? '#10B981' : '#94a3b8', transition: 'color 0.2s' }} />
+                                            <Lock size={18} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: focused === 'p' ? '#10B981' : '#94a3b8', transition: 'color 0.2s' }} />
                                             <input type={showPassword ? 'text' : 'password'} value={password}
                                                 onChange={e => { setPassword(e.target.value); setError(''); }}
                                                 onFocus={() => setFocused('p')} onBlur={() => setFocused(null)}
-                                                placeholder="Nhập mật khẩu..."
-                                                style={{ ...inputStyle('p'), paddingRight: 44 }} />
+                                                placeholder="Nhập mật khẩu..." style={{ ...inputStyle('p'), paddingRight: 44 }} />
                                             <button type="button" onClick={() => setShowPassword(!showPassword)}
                                                 style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', background: 'none', border: 'none', cursor: 'pointer', display: 'flex' }}>
-                                                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                                                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                                             </button>
                                         </div>
+                                    </div>
+
+                                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: -6 }}>
+                                        <button type="button" onClick={() => { setFpFlow('identify'); setFpError(''); setFpSuccess(''); }}
+                                            style={{ fontSize: 13, fontWeight: 600, color: '#10B981', background: 'none', border: 'none', cursor: 'pointer' }}
+                                            onMouseEnter={e => (e.currentTarget.style.textDecoration = 'underline')}
+                                            onMouseLeave={e => (e.currentTarget.style.textDecoration = 'none')}>
+                                            Quên mật khẩu?
+                                        </button>
                                     </div>
 
                                     <AnimatePresence>
                                         {error && (
                                             <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
-                                                style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 10, color: '#DC2626', fontSize: 13 }}>
-                                                <AlertCircle size={15} /><span>{error}</span>
+                                                style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 14px', background: 'var(--danger-light)', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: 12, color: 'var(--danger)', fontSize: 13, fontWeight: 500 }}>
+                                                <AlertCircle size={16} style={{ flexShrink: 0 }} /><span>{error}</span>
                                             </motion.div>
                                         )}
                                     </AnimatePresence>
@@ -164,145 +245,106 @@ const ParentLogin: React.FC = () => {
                                             color: 'white', fontSize: 15, fontWeight: 700,
                                             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                                             boxShadow: '0 8px 20px rgba(16,185,129,0.35)', opacity: loading ? 0.75 : 1,
-                                            marginTop: 4,
+                                            marginTop: 8,
                                         }}>
-                                        {loading ? <><Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} /><span>Đang đăng nhập...</span></> : <span>👨‍👩‍👧 Đăng nhập</span>}
+                                        {loading ? <><Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} /><span>Đang đăng nhập...</span></> : <span>Đăng nhập</span>}
                                     </motion.button>
-
-                                    <div style={{ textAlign: 'center' }}>
-                                        <button type="button" onClick={() => { setFpFlow('identify'); setFpError(''); setFpSuccess(''); }}
-                                            style={{ fontSize: 13, color: '#64748b', background: 'none', border: 'none', cursor: 'pointer' }}
-                                            onMouseEnter={e => (e.currentTarget.style.color = '#10B981')}
-                                            onMouseLeave={e => (e.currentTarget.style.color = '#64748b')}>
-                                            Quên mật khẩu?
-                                        </button>
-                                    </div>
                                 </form>
 
-                                <div style={{ marginTop: 28, paddingTop: 20, borderTop: '1px solid #f1f5f9', textAlign: 'center' }}>
-                                    <p style={{ fontSize: 12, color: '#94a3b8', marginBottom: 10 }}>Chưa có tài khoản? Liên hệ nhà trường để được cấp tài khoản</p>
-                                    <button onClick={() => navigate('/login')}
-                                        style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#64748b', background: 'none', border: 'none', cursor: 'pointer' }}
-                                        onMouseEnter={e => (e.currentTarget.style.color = '#10B981')}
+                                <div style={{ marginTop: 32, paddingTop: 24, borderTop: '1px solid #f1f5f9', textAlign: 'center' }}>
+                                    <button onClick={() => navigate('/')}
+                                        style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: '#64748b', background: 'none', border: 'none', cursor: 'pointer', transition: 'color 0.2s' }}
+                                        onMouseEnter={e => (e.currentTarget.style.color = '#0f172a')}
                                         onMouseLeave={e => (e.currentTarget.style.color = '#64748b')}>
-                                        <ArrowLeft size={13} /> Quay lại trang chọn vai trò
+                                        <ArrowLeft size={14} /> Trở về trang chủ
                                     </button>
                                 </div>
                             </motion.div>
                         ) : (
                             <motion.div key="fp" initial={{ opacity: 0, x: 15 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 15 }} transition={{ duration: 0.3 }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 32 }}>
                                     <button onClick={() => setFpFlow('none')}
-                                        style={{ width: 36, height: 36, borderRadius: 10, background: '#f8fafc', border: '1.5px solid #e2e8f0', color: '#64748b', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                                        <ArrowLeft size={16} />
+                                        style={{ width: 38, height: 38, borderRadius: 12, background: '#f8fafc', border: '1.5px solid #e2e8f0', color: '#64748b', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'all 0.2s' }}
+                                        onMouseEnter={e => { e.currentTarget.style.background = '#e2e8f0'; e.currentTarget.style.color = '#0f172a'; }}
+                                        onMouseLeave={e => { e.currentTarget.style.background = '#f8fafc'; e.currentTarget.style.color = '#64748b'; }}>
+                                        <ArrowLeft size={18} />
                                     </button>
                                     <div>
-                                        <h2 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: '#0f172a' }}>Khôi phục mật khẩu</h2>
-                                        <p style={{ margin: 0, fontSize: 12, color: '#64748b' }}>
-                                            {fpFlow === 'identify' && 'Nhập SĐT hoặc email để nhận OTP'}
-                                            {fpFlow === 'otp' && 'Nhập mã xác nhận đã gửi về điện thoại/email'}
+                                        <h2 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: '#0f172a' }}>Khôi phục mật khẩu</h2>
+                                        <p style={{ margin: '2px 0 0', fontSize: 13, color: '#64748b' }}>
+                                            {fpFlow === 'identify' && 'Nhập SĐT để nhận mã OTP'}
+                                            {fpFlow === 'otp' && 'Nhập mã 6 số gửi đến điện thoại'}
                                             {fpFlow === 'reset' && 'Tạo mật khẩu mới cho tài khoản'}
                                         </p>
                                     </div>
                                 </div>
 
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                                     {fpFlow === 'identify' && (
-                                        <form onSubmit={handleIdentify} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                                        <form onSubmit={handleIdentify} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                                             <div>
-                                                <label style={{ fontSize: 13, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 7 }}>SĐT hoặc Email</label>
+                                                <label style={{ fontSize: 13, fontWeight: 700, color: '#334155', display: 'block', marginBottom: 8 }}>Số điện thoại</label>
                                                 <div style={{ position: 'relative' }}>
-                                                    <Phone size={16} style={{ position: 'absolute', left: 15, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
-                                                    <input type="text" value={fpIdentity} onChange={e => setFpIdentity(e.target.value)} placeholder="VD: 09012..." style={inputStyle('fpi')} onFocus={() => setFocused('fpi')} onBlur={() => setFocused(null)} />
+                                                    <Phone size={18} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: focused === 'fpi' ? '#10B981' : '#94a3b8' }} />
+                                                    <input type="text" value={fpIdentity} onChange={e => setFpIdentity(e.target.value)} placeholder="Nhập số điện thoại..." style={inputStyle('fpi')} onFocus={() => setFocused('fpi')} onBlur={() => setFocused(null)} />
                                                 </div>
                                             </div>
-                                            <button type="submit" disabled={fpLoading} style={{ height: 48, borderRadius: 12, border: 'none', cursor: 'pointer', background: 'linear-gradient(135deg, #10B981, #059669)', color: 'white', fontWeight: 700, fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-                                                {fpLoading ? <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} /> : <><Send size={15} /> Gửi mã OTP</>}
+                                            <button type="submit" disabled={fpLoading} style={{ height: 52, borderRadius: 14, border: 'none', cursor: 'pointer', background: 'linear-gradient(135deg, #10B981, #059669)', color: 'white', fontWeight: 700, fontSize: 15, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 8, boxShadow: '0 8px 20px rgba(16,185,129,0.35)' }}>
+                                                {fpLoading ? <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} /> : <><Send size={16} /> Gửi mã OTP</>}
                                             </button>
                                         </form>
                                     )}
                                     {fpFlow === 'otp' && (
-                                        <form onSubmit={handleOtp} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                                        <form onSubmit={handleOtp} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                                             <div>
-                                                <label style={{ fontSize: 13, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 7 }}>Mã OTP</label>
+                                                <label style={{ fontSize: 13, fontWeight: 700, color: '#334155', display: 'block', marginBottom: 8 }}>Mã xác nhận (OTP)</label>
                                                 <div style={{ position: 'relative' }}>
-                                                    <Lock size={16} style={{ position: 'absolute', left: 15, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+                                                    <Lock size={18} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: focused === 'otp' ? '#10B981' : '#94a3b8' }} />
                                                     <input type="text" value={fpOtp} onChange={e => setFpOtp(e.target.value)} placeholder="Nhập mã 6 số..." style={inputStyle('otp')} onFocus={() => setFocused('otp')} onBlur={() => setFocused(null)} />
                                                 </div>
                                             </div>
-                                            <button type="submit" disabled={fpLoading} style={{ height: 48, borderRadius: 12, border: 'none', cursor: 'pointer', background: 'linear-gradient(135deg, #10B981, #059669)', color: 'white', fontWeight: 700, fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                                            <button type="submit" disabled={fpLoading} style={{ height: 52, borderRadius: 14, border: 'none', cursor: 'pointer', background: 'linear-gradient(135deg, #10B981, #059669)', color: 'white', fontWeight: 700, fontSize: 15, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 8, boxShadow: '0 8px 20px rgba(16,185,129,0.35)' }}>
                                                 {fpLoading ? <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} /> : 'Xác nhận OTP'}
                                             </button>
                                         </form>
                                     )}
                                     {fpFlow === 'reset' && (
-                                        <form onSubmit={handleReset} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                                        <form onSubmit={handleReset} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                                             <div>
-                                                <label style={{ fontSize: 13, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 7 }}>Mật khẩu mới</label>
+                                                <label style={{ fontSize: 13, fontWeight: 700, color: '#334155', display: 'block', marginBottom: 8 }}>Mật khẩu mới</label>
                                                 <div style={{ position: 'relative' }}>
-                                                    <Lock size={16} style={{ position: 'absolute', left: 15, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
-                                                    <input type={showPassword ? 'text' : 'password'} value={fpNewPassword} onChange={e => setFpNewPassword(e.target.value)} placeholder="Ít nhất 6 ký tự..." style={{ ...inputStyle('np'), paddingRight: 44 }} onFocus={() => setFocused('np')} onBlur={() => setFocused(null)} />
+                                                    <Lock size={18} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: focused === 'np' ? '#10B981' : '#94a3b8' }} />
+                                                    <input type={showPassword ? 'text' : 'password'} value={fpNewPassword} onChange={e => setFpNewPassword(e.target.value)} placeholder="Tối thiểu 6 ký tự..." style={{ ...inputStyle('np'), paddingRight: 44 }} onFocus={() => setFocused('np')} onBlur={() => setFocused(null)} />
                                                     <button type="button" onClick={() => setShowPassword(!showPassword)} style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', background: 'none', border: 'none', cursor: 'pointer', display: 'flex' }}>
-                                                        {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                                                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                                                     </button>
                                                 </div>
                                             </div>
-                                            <button type="submit" disabled={fpLoading} style={{ height: 48, borderRadius: 12, border: 'none', cursor: 'pointer', background: 'linear-gradient(135deg, #10B981, #059669)', color: 'white', fontWeight: 700, fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-                                                {fpLoading ? <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} /> : 'Đặt lại mật khẩu'}
+                                            <button type="submit" disabled={fpLoading} style={{ height: 52, borderRadius: 14, border: 'none', cursor: 'pointer', background: 'linear-gradient(135deg, #10B981, #059669)', color: 'white', fontWeight: 700, fontSize: 15, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 8, boxShadow: '0 8px 20px rgba(16,185,129,0.35)' }}>
+                                                {fpLoading ? <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} /> : 'Lưu mật khẩu mới'}
                                             </button>
                                         </form>
                                     )}
 
                                     <AnimatePresence>
-                                        {fpError && <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 10, color: '#DC2626', fontSize: 13 }}><AlertCircle size={15} /><span>{fpError}</span></motion.div>}
-                                        {fpSuccess && <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', background: '#ECFDF5', border: '1px solid #A7F3D0', borderRadius: 10, color: '#059669', fontSize: 13 }}><CheckCircle2 size={15} /><span>{fpSuccess}</span></motion.div>}
+                                        {fpError && <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 14px', background: 'var(--danger-light)', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: 12, color: 'var(--danger)', fontSize: 13, fontWeight: 500 }}><AlertCircle size={16} style={{ flexShrink: 0 }} /><span>{fpError}</span></motion.div>}
+                                        {fpSuccess && <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 14px', background: 'var(--success-light)', border: '1px solid rgba(16, 185, 129, 0.3)', borderRadius: 12, color: 'var(--success)', fontSize: 13, fontWeight: 500 }}><CheckCircle2 size={16} style={{ flexShrink: 0 }} /><span>{fpSuccess}</span></motion.div>}
                                     </AnimatePresence>
                                 </div>
                             </motion.div>
                         )}
                     </AnimatePresence>
-                </motion.div>
-            </div>
+                </div>
+            </motion.div>
 
-            {/* Right: Decorative panel */}
-            <div style={{
-                flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '48px',
-                background: 'linear-gradient(135deg, #064e3b 0%, #065f46 40%, #047857 100%)',
-                position: 'relative', overflow: 'hidden',
-            }}>
-                <div style={{ position: 'absolute', inset: 0, opacity: 0.07, backgroundImage: 'linear-gradient(rgba(255,255,255,1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,1) 1px, transparent 1px)', backgroundSize: '36px 36px' }} />
-                <div style={{ position: 'absolute', top: '20%', right: '15%', width: 280, height: 280, background: 'radial-gradient(circle, rgba(52,211,153,0.2) 0%, transparent 70%)', borderRadius: '50%' }} />
-                <div style={{ position: 'absolute', bottom: '20%', left: '10%', width: 200, height: 200, background: 'radial-gradient(circle, rgba(16,185,129,0.15) 0%, transparent 70%)', borderRadius: '50%' }} />
-
-                <motion.div
-                    initial={{ opacity: 0, x: 40 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.8, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
-                    style={{ position: 'relative', zIndex: 1, maxWidth: 400, textAlign: 'center' }}
-                >
-                    <div style={{ fontSize: 72, marginBottom: 24 }}>👨‍👩‍👧</div>
-                    <h2 style={{ margin: '0 0 12px', fontSize: 28, fontWeight: 800, color: 'white' }}>
-                        Theo dõi con yêu<br />mọi lúc, mọi nơi
-                    </h2>
-                    <p style={{ margin: '0 0 36px', fontSize: 14, color: 'rgba(255,255,255,0.55)', lineHeight: 1.7 }}>
-                        Biết ngay khi con lên xe, xuống xe.<br />Xem lộ trình xe trực tiếp trên bản đồ.
-                    </p>
-
-                    {[
-                        { icon: '📍', text: 'Theo dõi vị trí xe real-time trên bản đồ' },
-                        { icon: '🔔', text: 'Thông báo ngay khi con lên/xuống xe' },
-                        { icon: '📋', text: 'Xem lịch sử điểm danh theo ngày' },
-                        { icon: '📞', text: 'Liên hệ trực tiếp tài xế khi cần' },
-                    ].map((f, i) => (
-                        <motion.div key={i} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 + i * 0.1 }}
-                            style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', background: 'rgba(255,255,255,0.07)', borderRadius: 12, border: '1px solid rgba(255,255,255,0.1)', marginBottom: 8, textAlign: 'left' }}>
-                            <span style={{ fontSize: 20 }}>{f.icon}</span>
-                            <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)' }}>{f.text}</span>
-                        </motion.div>
-                    ))}
-                </motion.div>
-            </div>
-            <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+            <style>{`
+                @keyframes float {
+                    0% { transform: translateY(0px) rotate(0deg); }
+                    50% { transform: translateY(-20px) rotate(5deg); }
+                    100% { transform: translateY(0px) rotate(0deg); }
+                }
+                @keyframes spin { to { transform: rotate(360deg); } }
+            `}</style>
         </div>
     );
 };

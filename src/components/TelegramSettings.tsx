@@ -110,9 +110,9 @@ const TelegramSettings: React.FC<TelegramSettingsProps> = ({ currentChatId, onSa
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
                 style={{
-                    background: '#fff',
+                    background: 'var(--surface)',
                     borderRadius: 16,
-                    border: '1.5px solid #e2e8f0',
+                    border: '1.5px solid var(--border)',
                     overflow: 'hidden',
                     boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
                 }}
@@ -179,7 +179,7 @@ const TelegramSettings: React.FC<TelegramSettingsProps> = ({ currentChatId, onSa
                                     rel="noopener noreferrer"
                                     style={{ display: 'inline-flex', alignItems: 'center', gap: 5,
                                         color: '#0088cc', fontSize: 13, fontWeight: 600,
-                                        textDecoration: 'none', background: '#fff',
+                                        textDecoration: 'none', background: 'var(--bg)',
                                         padding: '4px 10px', borderRadius: 8,
                                         border: '1px solid #bae6fd' }}
                                 >
@@ -205,8 +205,8 @@ const TelegramSettings: React.FC<TelegramSettingsProps> = ({ currentChatId, onSa
                                 </p>
                                 <button onClick={copyCommand} style={{
                                     marginTop: 6, display: 'inline-flex', alignItems: 'center', gap: 5,
-                                    background: copied ? '#ecfdf5' : '#fff', color: copied ? '#059669' : '#0088cc',
-                                    border: `1px solid ${copied ? '#6ee7b7' : '#bae6fd'}`,
+                                    background: copied ? 'var(--success-light)' : 'var(--bg)', color: copied ? 'var(--success)' : '#0088cc',
+                                    border: `1px solid ${copied ? 'var(--success)' : '#bae6fd'}`,
                                     padding: '4px 10px', borderRadius: 8, cursor: 'pointer',
                                     fontSize: 12, fontWeight: 600, transition: 'all 0.2s',
                                 }}>
@@ -237,15 +237,15 @@ const TelegramSettings: React.FC<TelegramSettingsProps> = ({ currentChatId, onSa
                                 animate={{ opacity: 1, height: 'auto' }}
                                 exit={{ opacity: 0, height: 0 }}
                                 style={{
-                                    background: '#ecfdf5', border: '1.5px solid #6ee7b7',
+                                    background: 'var(--success-light)', border: '1.5px solid var(--success)',
                                     borderRadius: 10, padding: '10px 14px',
                                     marginBottom: 14, display: 'flex',
                                     alignItems: 'center', justifyContent: 'space-between',
                                 }}
                             >
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                    <CheckCircle2 size={16} color="#059669" />
-                                    <span style={{ fontSize: 13, color: '#065f46', fontWeight: 500 }}>
+                                    <CheckCircle2 size={16} color="var(--success)" />
+                                    <span style={{ fontSize: 13, color: 'var(--success)', fontWeight: 500 }}>
                                         Đang liên kết Chat ID:&nbsp;
                                         <strong style={{ fontFamily: 'monospace', fontSize: 14 }}>
                                             {currentChatId}
@@ -309,11 +309,12 @@ const TelegramSettings: React.FC<TelegramSettingsProps> = ({ currentChatId, onSa
                                     width: '100%',
                                     padding: '11px 14px 11px 40px',
                                     borderRadius: 10,
-                                    border: '1.5px solid #e2e8f0',
+                                    border: '1.5px solid var(--border)',
                                     fontSize: 14,
                                     fontFamily: chatId ? 'monospace' : 'inherit',
                                     fontWeight: chatId ? 600 : 400,
-                                    color: '#0f172a',
+                                    color: 'var(--text-primary)',
+                                    background: 'var(--bg)',
                                     outline: 'none',
                                     transition: 'border-color 0.2s, box-shadow 0.2s',
                                     boxSizing: 'border-box',
@@ -323,7 +324,7 @@ const TelegramSettings: React.FC<TelegramSettingsProps> = ({ currentChatId, onSa
                                     e.target.style.boxShadow = '0 0 0 3px rgba(0,136,204,0.12)';
                                 }}
                                 onBlur={e => {
-                                    e.target.style.borderColor = '#e2e8f0';
+                                    e.target.style.borderColor = 'var(--border)';
                                     e.target.style.boxShadow = 'none';
                                 }}
                             />
@@ -343,9 +344,9 @@ const TelegramSettings: React.FC<TelegramSettingsProps> = ({ currentChatId, onSa
                                 fontSize: 14, fontWeight: 600,
                                 whiteSpace: 'nowrap',
                                 background: loading || !isChanged
-                                    ? '#e2e8f0'
+                                    ? 'var(--surface-hover)'
                                     : 'linear-gradient(135deg, #0088cc, #229ed9)',
-                                color: loading || !isChanged ? '#94a3b8' : '#fff',
+                                color: loading || !isChanged ? 'var(--text-secondary)' : '#fff',
                                 boxShadow: loading || !isChanged
                                     ? 'none'
                                     : '0 4px 12px rgba(0,136,204,0.35)',

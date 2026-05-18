@@ -27,7 +27,7 @@ const DriverLayout: React.FC = () => {
         <div style={{ minHeight: '100vh', background: '#0f172a' }}>
             {/* Header */}
             <header style={{
-                position: 'sticky', top: 0, zIndex: 100,
+                position: 'sticky', top: 0, zIndex: 2000,
                 background: 'linear-gradient(180deg,#1e293b,#0f172a)',
                 borderBottom: '1px solid rgba(255,255,255,0.08)',
                 boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
@@ -91,7 +91,7 @@ const DriverLayout: React.FC = () => {
                                     animate={{ opacity: 1, y: 0, scale: 1 }}
                                     exit={{ opacity: 0, y: -8, scale: 0.97 }}
                                     style={{
-                                        position: 'absolute', right: 0, top: 46, zIndex: 200,
+                                        position: 'absolute', right: 0, top: 46, zIndex: 2001,
                                         width: 300, background: '#1e293b', borderRadius: 14,
                                         border: '1px solid rgba(255,255,255,0.1)',
                                         boxShadow: '0 12px 40px rgba(0,0,0,0.4)', overflow: 'hidden',
@@ -161,7 +161,7 @@ const DriverLayout: React.FC = () => {
                                     animate={{ opacity: 1, y: 0, scale: 1 }}
                                     exit={{ opacity: 0, y: -8, scale: 0.97 }}
                                     style={{
-                                        position: 'absolute', right: 0, top: 44, zIndex: 200,
+                                        position: 'absolute', right: 0, top: 44, zIndex: 2001,
                                         width: 200, background: '#1e293b', borderRadius: 12,
                                         border: '1px solid rgba(255,255,255,0.1)',
                                         boxShadow: '0 12px 40px rgba(0,0,0,0.4)', overflow: 'hidden',
@@ -203,7 +203,7 @@ const DriverLayout: React.FC = () => {
 
             {/* Backdrop */}
             {(showMenu || showNotif) && (
-                <div style={{ position: 'fixed', inset: 0, zIndex: 99 }}
+                <div style={{ position: 'fixed', inset: 0, zIndex: 1999 }}
                     onClick={() => { setShowMenu(false); setShowNotif(false); }} />
             )}
 

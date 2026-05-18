@@ -8,6 +8,7 @@ export interface User {
     fullName: string;
     avatar?: string;
     isEmailSet?: boolean;
+    telegramChatId?: string;
 }
 
 export interface Student {
