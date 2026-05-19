@@ -664,10 +664,11 @@ const StudentManagement: React.FC = () => {
                 const res = await studentAPI.create(payload);
                 setModal(null);
 
-                // ── Kiểm tra xem backend có tạo tài khoản phụ huynh mới không ──
-                const serverMsg: string = res.data?.message ?? '';
-                const isNewParent = serverMsg.includes('tài khoản phụ huynh');
-                const emailSent   = serverMsg.includes('gửi email thông báo');
+                // ── Kiểm tra xem backend có tạo/cập nhật tài khoản phụ huynh không ──
+                const parentInfo = res.data?.parentInfo;
+                const isNewParent = parentInfo?.isNew === true;
+                const emailSentTo: string | null = parentInfo?.emailSentTo ?? null;
+                const emailError: string | null = parentInfo?.emailError ?? null;
 
                 if (isNewParent) {
                     // Username luôn là SĐT (fatherPhone ưu tiên, hoặc motherPhone)
@@ -676,19 +677,23 @@ const StudentManagement: React.FC = () => {
                         name: form.fullName,
                         creds: {
                             username: parentPhone,
-                            email: form.parentEmail || '',   // rỗng nếu không nhập email
+                            email: emailSentTo || form.parentEmail || '',
                             password: '123456',
-                            emailSent,
-                            note: emailSent
+                            emailSent: !!emailSentTo,
+                            note: emailSentTo
                                 ? 'Thông tin đã được gửi tự động qua Gmail. Phụ huynh nên đổi mật khẩu ngay sau lần đăng nhập đầu tiên.'
-                                : 'Hệ thống chưa có email phụ huynh — vui lòng thông báo thông tin này trực tiếp. Phụ huynh nên cập nhật email trong phần Hồ sơ.',
+                                : emailError
+                                    ? `Gửi email thất bại: ${emailError}. Vui lòng thông báo thông tin này trực tiếp.`
+                                    : 'Hệ thống chưa có email phụ huynh — vui lòng thông báo thông tin này trực tiếp. Phụ huynh nên cập nhật email trong phần Hồ sơ.',
                         },
                     });
                 }
 
                 // Toast thông báo kết quả
-                if (emailSent) {
-                    showToast(`✅ Đã thêm ${form.fullName} & gửi email đến ${form.parentEmail}`);
+                if (emailSentTo) {
+                    showToast(`✅ Đã thêm ${form.fullName} & gửi email đến ${emailSentTo}`);
+                } else if (emailError) {
+                    showToast(`⚠️ Đã thêm ${form.fullName} nhưng gửi email thất bại: ${emailError}`, 'error');
                 } else {
                     showToast(`✅ Đã thêm học sinh ${form.fullName}`);
                 }
