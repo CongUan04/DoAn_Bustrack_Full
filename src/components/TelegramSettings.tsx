@@ -150,84 +150,94 @@ const TelegramSettings: React.FC<TelegramSettingsProps> = ({ currentChatId, onSa
                 <div style={{ padding: '24px' }}>
 
                     {/* ── Hướng dẫn 3 bước ──────────────────────── */}
-                    <div style={{
-                        background: 'linear-gradient(135deg, #f0f9ff, #e0f2fe)',
-                        border: '1.5px solid #bae6fd',
-                        borderRadius: 12,
-                        padding: '18px 20px',
-                        marginBottom: 20,
-                    }}>
-                        <p style={{ fontSize: 12, fontWeight: 700, color: '#0369a1',
-                            textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 14 }}>
-                            📋 Hướng dẫn thiết lập
-                        </p>
-
-                        {/* Step 1 */}
-                        <div style={{ display: 'flex', gap: 12, marginBottom: 12, alignItems: 'flex-start' }}>
-                            <span style={{ flexShrink: 0, width: 24, height: 24, borderRadius: '50%',
-                                background: '#0088cc', color: '#fff', fontSize: 12, fontWeight: 700,
-                                display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 1 }}>
-                                1
-                            </span>
-                            <div>
-                                <p style={{ fontSize: 13, color: '#1e40af', fontWeight: 600, margin: '0 0 3px' }}>
-                                    Mở Telegram và tìm bot của chúng tôi
+                    <AnimatePresence>
+                        {!isLinked && (
+                            <motion.div
+                                initial={{ opacity: 0, height: 0 }}
+                                animate={{ opacity: 1, height: 'auto' }}
+                                exit={{ opacity: 0, height: 0 }}
+                                style={{
+                                    background: 'linear-gradient(135deg, #f0f9ff, #e0f2fe)',
+                                    border: '1.5px solid #bae6fd',
+                                    borderRadius: 12,
+                                    padding: '18px 20px',
+                                    marginBottom: 20,
+                                    overflow: 'hidden'
+                                }}
+                            >
+                                <p style={{ fontSize: 12, fontWeight: 700, color: '#0369a1',
+                                    textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 14 }}>
+                                    📋 Hướng dẫn thiết lập
                                 </p>
-                                <a
-                                    href={BOT_URL}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    style={{ display: 'inline-flex', alignItems: 'center', gap: 5,
-                                        color: '#0088cc', fontSize: 13, fontWeight: 600,
-                                        textDecoration: 'none', background: 'var(--bg)',
-                                        padding: '4px 10px', borderRadius: 8,
-                                        border: '1px solid #bae6fd' }}
-                                >
-                                    <Send size={13} /> @{BOT_NAME}
-                                    <ExternalLink size={11} />
-                                </a>
-                            </div>
-                        </div>
 
-                        {/* Step 2 */}
-                        <div style={{ display: 'flex', gap: 12, marginBottom: 12, alignItems: 'flex-start' }}>
-                            <span style={{ flexShrink: 0, width: 24, height: 24, borderRadius: '50%',
-                                background: '#0088cc', color: '#fff', fontSize: 12, fontWeight: 700,
-                                display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 1 }}>
-                                2
-                            </span>
-                            <div>
-                                <p style={{ fontSize: 13, color: '#1e40af', fontWeight: 600, margin: '0 0 4px' }}>
-                                    Nhấn <strong>/start</strong> hoặc gõ lệnh <strong>/myid</strong>
-                                </p>
-                                <p style={{ fontSize: 12, color: '#64748b', margin: 0, lineHeight: 1.5 }}>
-                                    Bot sẽ gửi lại một dãy số gọi là <strong>Chat ID</strong> của bạn.
-                                </p>
-                                <button onClick={copyCommand} style={{
-                                    marginTop: 6, display: 'inline-flex', alignItems: 'center', gap: 5,
-                                    background: copied ? 'var(--success-light)' : 'var(--bg)', color: copied ? 'var(--success)' : '#0088cc',
-                                    border: `1px solid ${copied ? 'var(--success)' : '#bae6fd'}`,
-                                    padding: '4px 10px', borderRadius: 8, cursor: 'pointer',
-                                    fontSize: 12, fontWeight: 600, transition: 'all 0.2s',
-                                }}>
-                                    {copied ? <CheckCircle2 size={13} /> : <Copy size={13} />}
-                                    {copied ? 'Đã sao chép!' : 'Copy lệnh /myid'}
-                                </button>
-                            </div>
-                        </div>
+                                {/* Step 1 */}
+                                <div style={{ display: 'flex', gap: 12, marginBottom: 12, alignItems: 'flex-start' }}>
+                                    <span style={{ flexShrink: 0, width: 24, height: 24, borderRadius: '50%',
+                                        background: '#0088cc', color: '#fff', fontSize: 12, fontWeight: 700,
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 1 }}>
+                                        1
+                                    </span>
+                                    <div>
+                                        <p style={{ fontSize: 13, color: '#1e40af', fontWeight: 600, margin: '0 0 3px' }}>
+                                            Mở Telegram và tìm bot của chúng tôi
+                                        </p>
+                                        <a
+                                            href={BOT_URL}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            style={{ display: 'inline-flex', alignItems: 'center', gap: 5,
+                                                color: '#0088cc', fontSize: 13, fontWeight: 600,
+                                                textDecoration: 'none', background: 'var(--bg)',
+                                                padding: '4px 10px', borderRadius: 8,
+                                                border: '1px solid #bae6fd' }}
+                                        >
+                                            <Send size={13} /> @{BOT_NAME}
+                                            <ExternalLink size={11} />
+                                        </a>
+                                    </div>
+                                </div>
 
-                        {/* Step 3 */}
-                        <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-                            <span style={{ flexShrink: 0, width: 24, height: 24, borderRadius: '50%',
-                                background: '#0088cc', color: '#fff', fontSize: 12, fontWeight: 700,
-                                display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 1 }}>
-                                3
-                            </span>
-                            <p style={{ fontSize: 13, color: '#1e40af', fontWeight: 600, margin: '3px 0 0', lineHeight: 1.5 }}>
-                                Sao chép dãy số đó và dán vào ô bên dưới, rồi nhấn <strong>Lưu thay đổi</strong>.
-                            </p>
-                        </div>
-                    </div>
+                                {/* Step 2 */}
+                                <div style={{ display: 'flex', gap: 12, marginBottom: 12, alignItems: 'flex-start' }}>
+                                    <span style={{ flexShrink: 0, width: 24, height: 24, borderRadius: '50%',
+                                        background: '#0088cc', color: '#fff', fontSize: 12, fontWeight: 700,
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 1 }}>
+                                        2
+                                    </span>
+                                    <div>
+                                        <p style={{ fontSize: 13, color: '#1e40af', fontWeight: 600, margin: '0 0 4px' }}>
+                                            Nhấn <strong>/start</strong> hoặc gõ lệnh <strong>/myid</strong>
+                                        </p>
+                                        <p style={{ fontSize: 12, color: '#64748b', margin: 0, lineHeight: 1.5 }}>
+                                            Bot sẽ gửi lại một dãy số gọi là <strong>Chat ID</strong> của bạn.
+                                        </p>
+                                        <button onClick={copyCommand} style={{
+                                            marginTop: 6, display: 'inline-flex', alignItems: 'center', gap: 5,
+                                            background: copied ? 'var(--success-light)' : 'var(--bg)', color: copied ? 'var(--success)' : '#0088cc',
+                                            border: `1px solid ${copied ? 'var(--success)' : '#bae6fd'}`,
+                                            padding: '4px 10px', borderRadius: 8, cursor: 'pointer',
+                                            fontSize: 12, fontWeight: 600, transition: 'all 0.2s',
+                                        }}>
+                                            {copied ? <CheckCircle2 size={13} /> : <Copy size={13} />}
+                                            {copied ? 'Đã sao chép!' : 'Copy lệnh /myid'}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* Step 3 */}
+                                <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                                    <span style={{ flexShrink: 0, width: 24, height: 24, borderRadius: '50%',
+                                        background: '#0088cc', color: '#fff', fontSize: 12, fontWeight: 700,
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 1 }}>
+                                        3
+                                    </span>
+                                    <p style={{ fontSize: 13, color: '#1e40af', fontWeight: 600, margin: '3px 0 0', lineHeight: 1.5 }}>
+                                        Sao chép dãy số đó và dán vào ô bên dưới, rồi nhấn <strong>Lưu thay đổi</strong>.
+                                    </p>
+                                </div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
 
                     {/* ── Chat ID hiện tại (nếu đã liên kết) ──────── */}
                     <AnimatePresence>
@@ -246,7 +256,7 @@ const TelegramSettings: React.FC<TelegramSettingsProps> = ({ currentChatId, onSa
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                                     <CheckCircle2 size={16} color="var(--success)" />
                                     <span style={{ fontSize: 13, color: 'var(--success)', fontWeight: 500 }}>
-                                        Đang liên kết Chat ID:&nbsp;
+                                        Tài khoản đã xác thực ChatID:&nbsp;
                                         <strong style={{ fontFamily: 'monospace', fontSize: 14 }}>
                                             {currentChatId}
                                         </strong>

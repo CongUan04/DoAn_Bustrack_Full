@@ -14,13 +14,15 @@ import {
     ArrowUpCircle, ArrowDownCircle, Bus, CreditCard,
     MapPin, Calendar, RefreshCw,
     Loader2, Wifi, WifiOff, CheckCircle,
-    GraduationCap, Route, User, Mail, X, AlertTriangle, XCircle
+    GraduationCap, Route, User, Mail, X, AlertTriangle, XCircle,
+    Lock, Sun, Moon, LogOut, Settings, Send
 } from 'lucide-react';
 import { toast } from 'react-toastify';
-import { attendanceAPI, busAPI, studentAPI, routeAPI } from '../services/api';
+import { attendanceAPI, busAPI, studentAPI, routeAPI, authAPI } from '../services/api';
 import { useSocket } from '../contexts/SocketContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useOutletContext } from 'react-router-dom';
+import TelegramSettings from '../components/TelegramSettings';
 
 // Fix Leaflet icons
 delete (L.Icon.Default.prototype as unknown as Record<string, unknown>)._getIconUrl;
@@ -226,11 +228,176 @@ const AbsenceModal: React.FC<{
     );
 };
 
+// ── Settings Component ───────────────────────────────────────────
+const ParentSettings: React.FC = () => {
+    const { user, updateUser, logout } = useAuth();
+    const [form, setForm] = useState({ email: '', currentPassword: '', newPassword: '', confirmPassword: '' });
+    const [loading, setLoading] = useState(false);
+    const [msg, setMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+    const [isDarkMode, setIsDarkMode] = useState(() => document.documentElement.classList.contains('dark-theme'));
+
+    const toggleTheme = () => {
+        const next = !isDarkMode;
+        setIsDarkMode(next);
+        if (next) {
+            document.documentElement.classList.add('dark-theme');
+            localStorage.setItem('theme', 'dark');
+        } else {
+            document.documentElement.classList.remove('dark-theme');
+            localStorage.setItem('theme', 'light');
+        }
+    };
+
+    const handleSave = async () => {
+        if (form.newPassword && form.newPassword !== form.confirmPassword) {
+            setMsg({ type: 'error', text: 'Mật khẩu xác nhận không khớp' });
+            return;
+        }
+        setLoading(true);
+        setMsg(null);
+        try {
+            const payload: Record<string, string> = {};
+            if (form.email) payload.email = form.email;
+            if (form.newPassword) { payload.currentPassword = form.currentPassword; payload.newPassword = form.newPassword; }
+
+            const res = await authAPI.updateProfile(payload);
+            const updated = res.data.data;
+            updateUser({ email: updated.email, isEmailSet: updated.isEmailSet });
+            setMsg({ type: 'success', text: 'Cập nhật thành công!' });
+            setForm(prev => ({ ...prev, currentPassword: '', newPassword: '', confirmPassword: '' }));
+        } catch (err: unknown) {
+            const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Lỗi cập nhật';
+            setMsg({ type: 'error', text: msg });
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <div style={{ maxWidth: 600, margin: '0 auto', paddingBottom: 40 }}>
+            {/* Profile Header */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '18px', background: 'var(--surface)', borderRadius: 16, marginBottom: 20, boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+                <div style={{
+                    width: 56, height: 56, borderRadius: 16,
+                    background: 'linear-gradient(135deg,#7c3aed,#a855f7)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    color: 'white', fontWeight: 700, fontSize: 24,
+                }}>
+                    {user?.fullName?.split(' ').pop()?.charAt(0)}
+                </div>
+                <div>
+                    <p style={{ margin: 0, fontWeight: 700, fontSize: 18, color: 'var(--text-primary)' }}>{user?.fullName}</p>
+                    <p style={{ margin: '4px 0 0', fontSize: 13, color: user?.isEmailSet ? '#059669' : '#f59e0b', fontWeight: 600 }}>
+                        {user?.isEmailSet ? `✅ ${user?.email}` : '⚠️ Chưa cập nhật Gmail'}
+                    </p>
+                </div>
+            </div>
+
+            {/* Theme Toggle */}
+            <div style={{ marginBottom: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--surface)', padding: '16px 18px', borderRadius: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <div style={{ width: 38, height: 38, borderRadius: 10, background: 'var(--primary-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)' }}>
+                        {isDarkMode ? <Moon size={18} /> : <Sun size={18} />}
+                    </div>
+                    <div>
+                        <p style={{ margin: 0, fontWeight: 600, fontSize: 14, color: 'var(--text-primary)' }}>Chế độ Tối (Dark Mode)</p>
+                        <p style={{ margin: '2px 0 0', fontSize: 12, color: 'var(--text-secondary)' }}>Giảm chói mắt khi xem ban đêm</p>
+                    </div>
+                </div>
+                <div onClick={toggleTheme} style={{
+                    width: 48, height: 26, borderRadius: 13, background: isDarkMode ? '#10B981' : '#cbd5e1',
+                    position: 'relative', cursor: 'pointer', transition: '0.3s'
+                }}>
+                    <div style={{
+                        width: 22, height: 22, borderRadius: '50%', background: 'white',
+                        position: 'absolute', top: 2, left: isDarkMode ? 24 : 2, transition: '0.3s', boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                    }} />
+                </div>
+            </div>
+
+            {/* Account Settings */}
+            <div style={{ background: 'var(--surface)', padding: '20px', borderRadius: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.04)', marginBottom: 20 }}>
+                <p style={{ margin: '0 0 16px', fontWeight: 700, fontSize: 15, color: 'var(--text-primary)' }}>Bảo mật tài khoản</p>
+                {[
+                    { key: 'email', label: 'Gmail mới', type: 'email', icon: <Mail size={16} />, placeholder: 'Nhập Gmail thật của bạn...' },
+                    { key: 'currentPassword', label: 'Mật khẩu hiện tại', type: 'password', icon: <Lock size={16} />, placeholder: 'Nhập mật khẩu đang dùng...' },
+                    { key: 'newPassword', label: 'Mật khẩu mới', type: 'password', icon: <Lock size={16} />, placeholder: 'Để trống nếu không đổi...' },
+                    { key: 'confirmPassword', label: 'Xác nhận mật khẩu', type: 'password', icon: <Lock size={16} />, placeholder: 'Nhập lại mật khẩu mới...' },
+                ].map(f => (
+                    <div key={f.key} style={{ marginBottom: 14 }}>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 6 }}>
+                            {f.icon} {f.label}
+                            {f.key === 'email' && !user?.isEmailSet && (
+                                <span style={{ marginLeft: 4, fontSize: 10, background: '#fef3c7', color: '#92400e', padding: '2px 6px', borderRadius: 20, fontWeight: 700 }}>Chưa cập nhật</span>
+                            )}
+                        </label>
+                        <input
+                            type={f.type}
+                            value={form[f.key as keyof typeof form]}
+                            onChange={e => setForm(prev => ({ ...prev, [f.key]: e.target.value }))}
+                            placeholder={f.placeholder}
+                            style={{
+                                width: '100%', padding: '12px 14px', borderRadius: 12, boxSizing: 'border-box',
+                                border: `1.5px solid ${f.key === 'email' && !user?.isEmailSet ? 'rgba(245,158,11,0.4)' : 'var(--border)'}`,
+                                fontSize: 14, outline: 'none',
+                                background: f.key === 'email' && !user?.isEmailSet ? 'var(--warning-light)' : 'var(--bg)',
+                                color: 'var(--text-primary)'
+                            }}
+                        />
+                    </div>
+                ))}
+
+                <AnimatePresence>
+                    {msg && (
+                        <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                            style={{
+                                padding: '12px 16px', borderRadius: 12, marginBottom: 16, fontSize: 13, fontWeight: 600,
+                                background: msg.type === 'success' ? 'var(--success-light)' : 'var(--danger-light)',
+                                color: msg.type === 'success' ? 'var(--success)' : 'var(--danger)',
+                                border: `1px solid ${msg.type === 'success' ? 'rgba(16,185,129,0.3)' : 'rgba(239,68,68,0.3)'}`,
+                            }}>
+                            {msg.type === 'success' ? '✅ ' : '❌ '}{msg.text}
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+                <button onClick={handleSave} disabled={loading} style={{
+                    width: '100%', padding: '12px', borderRadius: 12, border: 'none',
+                    background: 'linear-gradient(135deg,#7c3aed,#a855f7)', color: 'white',
+                    cursor: loading ? 'not-allowed' : 'pointer', fontWeight: 700, fontSize: 14,
+                    opacity: loading ? 0.7 : 1,
+                }}>
+                    {loading ? 'Đang lưu...' : 'Lưu thay đổi'}
+                </button>
+            </div>
+
+            {/* Telegram Settings */}
+            <div style={{ background: 'var(--surface)', padding: '20px', borderRadius: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.04)', marginBottom: 20 }}>
+                <TelegramSettings
+                    currentChatId={user?.telegramChatId}
+                    onSaved={(id) => updateUser({ telegramChatId: id || undefined })}
+                />
+            </div>
+
+            {/* Logout Button */}
+            <button onClick={logout} style={{
+                width: '100%', padding: '14px', borderRadius: 16, border: '1px solid rgba(239,68,68,0.3)',
+                background: 'var(--danger-light)', color: 'var(--danger)', fontWeight: 700, fontSize: 15,
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, cursor: 'pointer'
+            }}>
+                <LogOut size={18} />
+                Đăng xuất
+            </button>
+        </div>
+    );
+};
+
+
 // ── Main Component ──────────────────────────────────────────────
 const ParentView: React.FC = () => {
     const { user } = useAuth();
     const { connected: socketConnected, recentSwipes, gpsUpdates } = useSocket();
-    const { openProfile } = useOutletContext<{ openProfile: () => void }>();
+    const { activeTab, setActiveTab } = useOutletContext<{ activeTab: string, setActiveTab: (t: string) => void }>();
 
     const [children, setChildren] = useState<StudentInfo[]>([]);
     const [logs, setLogs] = useState<LogEntry[]>([]);
@@ -242,8 +409,14 @@ const ParentView: React.FC = () => {
     const [absentModal, setAbsentModal] = useState<{ childId: string; childName: string } | null>(null);
     const [absentLoading, setAbsentLoading] = useState(false);
 
+    // Bottom Sheet state
+    const [sheetOpen, setSheetOpen] = useState(false);
+
     const [dismissBanner, setDismissBanner] = useState(false);
     const needEmailSetup = !user?.isEmailSet && !dismissBanner;
+
+    const [dismissTgBanner, setDismissTgBanner] = useState(false);
+    const needTgSetup = !user?.telegramChatId && !dismissTgBanner;
 
     const todayISO = new Date().toISOString().slice(0, 10);
     const childIds = children.map(c => c._id);
@@ -358,284 +531,81 @@ const ParentView: React.FC = () => {
 
     return (
         <>
-        <div style={{ padding: '20px 24px', maxWidth: 1100, margin: '0 auto' }}>
-            {/* ── Banner nhắc cập nhật Gmail ─────────────────── */}
-            <AnimatePresence>
-                {needEmailSetup && (
-                    <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: 'auto' }}
-                        exit={{ opacity: 0, height: 0 }}
-                        style={{
-                            marginBottom: 18, padding: '14px 18px', borderRadius: 14,
-                            background: 'var(--warning-light)',
-                            border: '1.5px solid rgba(245, 158, 11, 0.4)',
-                            display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap',
-                        }}
-                    >
-                        <div style={{ width: 38, height: 38, borderRadius: 10, background: '#f59e0b', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                            <AlertTriangle size={20} color="white" />
-                        </div>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                            <p style={{ margin: 0, fontWeight: 700, fontSize: 14, color: 'var(--warning)' }}>⚠️ Tài khoản chưa có Gmail thật</p>
-                            <p style={{ margin: '3px 0 0', fontSize: 12, color: 'var(--text-secondary)' }}>
-                                Vui lòng cập nhật Gmail để có thể đặt lại mật khẩu và nhận thông báo quan trọng từ hệ thống.
-                            </p>
-                        </div>
-                        <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
-                            <button onClick={openProfile} style={{
-                                padding: '8px 16px', borderRadius: 10, border: 'none',
-                                background: '#f59e0b', color: 'white', fontWeight: 700, fontSize: 13, cursor: 'pointer',
-                            }}>
-                                <Mail size={13} style={{ display: 'inline', marginRight: 5 }} />
-                                Cập nhật Gmail
-                            </button>
+            <div style={{ padding: activeTab === 'home' ? 0 : '20px 24px', maxWidth: 1100, margin: '0 auto' }}>
+                {/* ── Banner nhắc cập nhật Gmail ─────────────────── */}
+                <AnimatePresence>
+                    {needEmailSetup && activeTab === 'settings' && (
+                        <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            exit={{ opacity: 0, height: 0 }}
+                            style={{
+                                marginBottom: 18, padding: '14px 18px', borderRadius: 14,
+                                background: 'var(--warning-light)',
+                                border: '1.5px solid rgba(245, 158, 11, 0.4)',
+                                display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap',
+                            }}
+                        >
+                            <div style={{ width: 38, height: 38, borderRadius: 10, background: '#f59e0b', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                <AlertTriangle size={20} color="white" />
+                            </div>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                                <p style={{ margin: 0, fontWeight: 700, fontSize: 14, color: 'var(--warning)' }}>⚠️ Tài khoản chưa có Gmail thật</p>
+                                <p style={{ margin: '3px 0 0', fontSize: 12, color: 'var(--text-secondary)' }}>
+                                    Vui lòng cập nhật Gmail để có thể đặt lại mật khẩu và nhận thông báo.
+                                </p>
+                            </div>
                             <button onClick={() => setDismissBanner(true)} style={{
-                                padding: '8px 10px', borderRadius: 10, border: '1px solid rgba(245, 158, 11, 0.4)',
-                                background: 'transparent', color: 'var(--warning)', cursor: 'pointer',
+                                padding: '8px', borderRadius: 10, border: '1px solid rgba(245, 158, 11, 0.4)',
+                                background: 'transparent', color: 'var(--warning)', cursor: 'pointer', flexShrink: 0
                             }}>
                                 <X size={14} />
                             </button>
-                        </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
 
-            {/* Header */}
-            <div style={{ marginBottom: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
-                <div>
-                    <h1 style={{ fontSize: 24, fontWeight: 700, margin: 0 }}>
-                        Xin chào, {user?.fullName?.split(' ').pop()} 👋
-                    </h1>
-                    <p style={{ margin: '4px 0 0', opacity: 0.55, fontSize: 13 }}>Theo dõi con em và xe buýt trường</p>
-                </div>
-                <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-                    <div style={{
-                        display: 'flex', alignItems: 'center', gap: 6, fontSize: 12,
-                        background: socketConnected ? 'var(--success-light)' : 'var(--danger-light)',
-                        color: socketConnected ? 'var(--success)' : 'var(--danger)',
-                        padding: '6px 12px', borderRadius: 20, fontWeight: 500, border: `1px solid ${socketConnected ? 'rgba(16,185,129,0.3)' : 'rgba(239,68,68,0.3)'}`
-                    }}>
-                        {socketConnected ? <Wifi size={12} /> : <WifiOff size={12} />}
-                        {socketConnected ? 'Live' : 'Mất kết nối'}
-                    </div>
-
-
-                    <button onClick={fetchData} style={{
-                        display: 'flex', alignItems: 'center', gap: 6,
-                        padding: '7px 14px', borderRadius: 10, color: 'var(--text-primary)',
-                        background: 'var(--surface)', border: '1px solid var(--border)',
-                        cursor: 'pointer', fontSize: 13, fontWeight: 500,
-                    }}>
-                        <RefreshCw size={13} /> Cập nhật
-                    </button>
-                </div>
-            </div>
-
-            {/* ── KPI cards ─────────────────────────────────────── */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 14, marginBottom: 22 }}>
-                <motion.div whileHover={{ y: -2 }} style={{
-                    background: latestLog?.action_type === 'Boarding'
-                        ? 'linear-gradient(135deg,#059669,#10b981)'
-                        : latestLog?.action_type === 'Dropping'
-                            ? 'linear-gradient(135deg,#2563eb,#3b82f6)'
-                            : 'linear-gradient(135deg,#64748b,#94a3b8)',
-                    color: 'white', borderRadius: 14, padding: '18px 20px',
-                    boxShadow: '0 4px 18px rgba(0,0,0,0.13)',
-                }}>
-                    <p style={{ margin: 0, opacity: 0.85, fontSize: 12 }}>Trạng thái hôm nay</p>
-                    <p style={{ margin: '8px 0 0', fontSize: 18, fontWeight: 700 }}>
-                        {latestLog?.action_type === 'Boarding' ? '🟢 Đã lên xe'
-                            : latestLog?.action_type === 'Dropping' ? '🔵 Đã xuống xe'
-                                : '⚪ Chưa có dữ liệu'}
-                    </p>
-                    {latestLog && <p style={{ margin: '4px 0 0', fontSize: 11, opacity: 0.85 }}>{fmtTime(latestLog.scan_time)} · Xe {latestLog.bus_id?.licensePlate ?? '—'}</p>}
-                </motion.div>
-                <motion.div whileHover={{ y: -2 }} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 14, padding: '18px 20px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <div>
-                            <p style={{ margin: 0, opacity: 0.5, fontSize: 12, color: 'var(--text-primary)' }}>Xe đang hoạt động</p>
-                            <p style={{ margin: '8px 0 0', fontSize: 26, fontWeight: 700, color: 'var(--primary)' }}>{onlineBuses.length}</p>
-                            <p style={{ margin: '2px 0 0', fontSize: 11, opacity: 0.5, color: 'var(--text-primary)' }}>/ {buses.length} xe tổng cộng</p>
-                        </div>
-                        <div style={{ width: 40, height: 40, borderRadius: 10, background: 'var(--primary-light)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <Bus size={20} color="var(--primary)" />
-                        </div>
-                    </div>
-                </motion.div>
-            </div>
-
-            {/* ── Thông tin học sinh con em ──────────────────────── */}
-            <div style={{ marginBottom: 22 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14, fontWeight: 700, fontSize: 16 }}>
-                    <GraduationCap size={18} color="#7c3aed" />
-                    Học sinh của bạn
-                </div>
-                {loading ? (
-                    <div style={{ textAlign: 'center', padding: '24px', color: '#94a3b8' }}>
-                        <Loader2 size={22} style={{ animation: 'spin 1s linear infinite', margin: '0 auto 8px' }} />
-                    </div>
-                ) : children.length === 0 ? (
-                    <div style={{ padding: '20px', background: 'var(--surface-hover)', borderRadius: 12, textAlign: 'center', color: 'var(--text-muted)', fontSize: 13 }}>
-                        Chưa có học sinh nào liên kết với tài khoản này
-                    </div>
-                ) : (
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 14 }}>
-                        {children.map(child => {
-                            const latestChildLog = logs.find(l => l.student_id?._id === child._id);
-                            const isOnBus = child.currentStatus === 'On_Bus';
-                            return (
-                                <motion.div key={child._id} whileHover={{ y: -2 }} style={{
-                                    background: 'var(--surface)', borderRadius: 14,
-                                    border: `2px solid ${isOnBus ? 'rgba(16,185,129,0.3)' : 'var(--border)'}`,
-                                    padding: '16px 18px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-                                }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
-                                        <div style={{
-                                            width: 44, height: 44, borderRadius: 12, flexShrink: 0,
-                                            background: 'linear-gradient(135deg,#7c3aed,#a855f7)',
-                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                            color: 'white', fontWeight: 700, fontSize: 18,
-                                        }}>
-                                            {child.fullName.split(' ').pop()?.charAt(0)}
+                {/* ── TABS RENDERING ── */}
+                {activeTab === 'home' && (
+                    <div style={{ position: 'relative', width: '100%', height: 'calc(100vh - 60px - 65px - env(safe-area-inset-bottom))', overflow: 'hidden' }}>
+                        {/* Telegram Banner on Map */}
+                        <AnimatePresence>
+                            {needTgSetup && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: -20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -20 }}
+                                    style={{
+                                        position: 'absolute', top: 16, left: 16, right: 16, zIndex: 2000,
+                                        background: 'var(--surface)', borderRadius: 16,
+                                        boxShadow: '0 8px 30px rgba(0,0,0,0.12)',
+                                        border: '1.5px solid #bae6fd', padding: '16px',
+                                    }}
+                                >
+                                    <div style={{ display: 'flex', gap: 12 }}>
+                                        <div style={{ width: 40, height: 40, borderRadius: 12, background: '#0088cc', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                            <Send size={20} color="white" />
                                         </div>
-                                        <div style={{ flex: 1, minWidth: 0 }}>
-                                            <p style={{ margin: 0, fontWeight: 700, fontSize: 14, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--text-primary)' }}>{child.fullName}</p>
-                                            <div style={{ display: 'flex', gap: 6, marginTop: 4, flexWrap: 'wrap' }}>
-                                                <span style={{ fontSize: 10, background: 'var(--purple-light)', color: '#7c3aed', padding: '2px 7px', borderRadius: 20, fontWeight: 600 }}>Lớp {child.class}</span>
-                                                <span style={{ fontSize: 10, background: 'var(--bg)', color: 'var(--text-secondary)', padding: '2px 7px', borderRadius: 20 }}>{child.studentCode}</span>
-                                            </div>
-                                        </div>
-                                        <span style={{
-                                            fontSize: 10, fontWeight: 700, padding: '3px 9px', borderRadius: 20,
-                                            background: child.currentStatus === 'Absent' ? 'var(--danger-light)' : isOnBus ? 'var(--success-light)' : 'var(--bg)',
-                                            color: child.currentStatus === 'Absent' ? 'var(--danger)' : isOnBus ? 'var(--success)' : 'var(--text-secondary)',
-                                            flexShrink: 0, border: child.currentStatus === 'Absent' ? '1px solid rgba(239,68,68,0.3)' : isOnBus ? '1px solid rgba(16,185,129,0.3)' : '1px solid var(--border)',
-                                        }}>
-                                            {child.currentStatus === 'Absent' ? '🔴 Nghỉ phép' : isOnBus ? '🟢 Trên xe' : '⚪ Chưa lên'}
-                                        </span>
-                                    </div>
-                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, fontSize: 12, color: '#64748b' }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                                            <CreditCard size={12} color="#94a3b8" />
-                                            <span>{child.rfid_uid || 'Chưa có thẻ'}</span>
-                                        </div>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                                            <Route size={12} color="#94a3b8" />
-                                            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{child.route_id?.routeName || '—'}</span>
+                                        <div style={{ flex: 1 }}>
+                                            <p style={{ margin: 0, fontWeight: 700, fontSize: 14, color: 'var(--text-primary)' }}>Nhận thông báo qua Telegram</p>
+                                            <p style={{ margin: '4px 0 0', fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.4 }}>Liên kết Telegram để nhận thông báo bé lên/xuống xe theo thời gian thực.</p>
                                         </div>
                                     </div>
-                                    {latestChildLog && (
-                                        <div style={{ marginTop: 10, padding: '8px 10px', background: latestChildLog.action_type === 'Boarding' ? 'var(--success-light)' : 'var(--primary-light)', borderRadius: 8, fontSize: 11, display: 'flex', gap: 6, alignItems: 'center' }}>
-                                            {latestChildLog.action_type === 'Boarding'
-                                                ? <ArrowUpCircle size={13} color="var(--success)" />
-                                                : <ArrowDownCircle size={13} color="var(--primary)" />}
-                                            <span style={{ color: latestChildLog.action_type === 'Boarding' ? 'var(--success)' : 'var(--primary)', fontWeight: 600 }}>
-                                                {latestChildLog.action_type === 'Boarding' ? 'Lên xe' : 'Xuống xe'}
-                                            </span>
-                                            <span style={{ color: 'var(--text-secondary)' }}>lúc {fmtTime(latestChildLog.scan_time)}</span>
-                                        </div>
-                                    )}
-
-                                    {/* ── Thời khóa biểu ── */}
-                                    {(() => {
-                                        const DAY_LABELS = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
-                                        const todayDow = new Date().getDay();
-                                        const studyDays = child.studyDays ?? [1, 2, 3, 4, 5];
-                                        const hasTodayClass = studyDays.includes(todayDow);
-                                        return (
-                                            <div style={{ marginTop: 12 }}>
-                                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-                                                    <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-secondary)' }}>
-                                                        📅 Lịch học trong tuần
-                                                    </span>
-                                                    {!hasTodayClass && child.currentStatus !== 'Absent' && (
-                                                        <span style={{ fontSize: 10, background: 'var(--warning-light)', color: 'var(--warning)', padding: '2px 7px', borderRadius: 10, fontWeight: 700 }}>
-                                                            ⚠️ Hôm nay không học
-                                                        </span>
-                                                    )}
-                                                </div>
-                                                <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
-                                                    {DAY_LABELS.map((label, dow) => {
-                                                        const isStudy = studyDays.includes(dow);
-                                                        const isToday = dow === todayDow;
-                                                        return (
-                                                            <button
-                                                                key={dow}
-                                                                onClick={() => handleToggleStudyDay(child, dow)}
-                                                                title={isStudy ? 'Bấm để bỏ ngày học' : 'Bấm để thêm ngày học'}
-                                                                style={{
-                                                                    width: 34, height: 28, borderRadius: 7,
-                                                                    border: isToday ? '2px solid var(--primary)' : '1.5px solid var(--border)',
-                                                                    background: isStudy
-                                                                        ? isToday ? 'var(--primary)' : 'var(--primary-light)'
-                                                                        : 'var(--bg)',
-                                                                    color: isStudy
-                                                                        ? isToday ? 'white' : 'var(--primary)'
-                                                                        : 'var(--text-muted)',
-                                                                    fontSize: 10, fontWeight: isToday ? 800 : 600,
-                                                                    cursor: 'pointer',
-                                                                    opacity: isStudy ? 1 : 0.45,
-                                                                    transition: 'all 0.15s',
-                                                                }}
-                                                            >
-                                                                {label}
-                                                            </button>
-                                                        );
-                                                    })}
-                                                </div>
-                                            </div>
-                                        );
-                                    })()}
-
-                                    {child.currentStatus !== 'Absent' && !isOnBus && (
-                                        <button
-                                            onClick={() => handleMarkAbsent(child._id, child.fullName)}
-                                            style={{
-                                                marginTop: 12, width: '100%', padding: '8px 10px',
-                                                background: 'var(--danger-light)', color: 'var(--danger)',
-                                                border: '1px solid rgba(239,68,68,0.3)', borderRadius: 8,
-                                                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                                                cursor: 'pointer', fontWeight: 600, fontSize: 12
-                                            }}
-                                        >
-                                            <XCircle size={14} />
-                                            Báo vắng mặt hôm nay
+                                    <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
+                                        <button onClick={() => setDismissTgBanner(true)} style={{ flex: 1, padding: '8px', borderRadius: 10, background: 'var(--bg)', border: '1px solid var(--border)', color: 'var(--text-primary)', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+                                            Để sau
                                         </button>
-                                    )}
-                                    {child.currentStatus === 'Absent' && (
-                                        <div style={{
-                                            marginTop: 12, width: '100%', padding: '8px 10px',
-                                            background: 'var(--surface-hover)', color: 'var(--text-secondary)',
-                                            border: '1px solid var(--border)', borderRadius: 8,
-                                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                                            fontWeight: 600, fontSize: 12
-                                        }}>
-                                            <XCircle size={14} />
-                                            Đã báo vắng mặt
-                                        </div>
-                                    )}
+                                        <button onClick={() => setActiveTab('settings')} style={{ flex: 1, padding: '8px', borderRadius: 10, background: '#0088cc', border: 'none', color: 'white', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+                                            Thêm ngay
+                                        </button>
+                                    </div>
                                 </motion.div>
-                            );
-                        })}
-                    </div>
-                )}
-            </div>
+                            )}
+                        </AnimatePresence>
 
-            {/* ── Live Map + Danh sách điểm danh ───────────────── */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 18, marginBottom: 20 }}>
-                {/* Live Map */}
-                <div style={{ background: 'var(--surface)', borderRadius: 14, border: '1px solid var(--border)', overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
-                    <div style={{ padding: '14px 18px 0', display: 'flex', alignItems: 'center', gap: 8, fontWeight: 700, fontSize: 15 }}>
-                        <MapPin size={16} color="#2563eb" />
-                        Bản đồ theo dõi xe
-                        {socketConnected && <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#059669', display: 'inline-block', marginLeft: 4, boxShadow: '0 0 0 3px rgba(5,150,105,0.2)', animation: 'pulse 2s infinite' }} />}
-                    </div>
-                    <div style={{ height: 340 }}>
-                        <style>{`@keyframes spin { to { transform: rotate(360deg); } } @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }`}</style>
-                        <MapContainer center={mapCenter} zoom={13} style={{ width: '100%', height: '100%' }} zoomControl={true}>
+                        <MapContainer center={mapCenter} zoom={14} style={{ width: '100%', height: '100%' }} zoomControl={false}>
                             <TileLayer
-                                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                                attribution='&copy; OpenStreetMap'
                                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                             />
                             {/* School markers */}
@@ -649,7 +619,7 @@ const ParentView: React.FC = () => {
                                 const sorted = [...r.stops].sort((a, b) => a.order - b.order);
                                 if (sorted.length < 2) return null;
                                 const colors = ['#3B82F6', '#10B981', '#F59E0B', '#EC4899', '#8B5CF6'];
-                                return <Polyline key={r._id} positions={sorted.map(s => [s.lat, s.lng])} color={colors[ri % colors.length]} weight={2} opacity={0.5} dashArray="6,4" />;
+                                return <Polyline key={r._id} positions={sorted.map(s => [s.lat, s.lng])} color={colors[ri % colors.length]} weight={3} opacity={0.6} dashArray="8,6" />;
                             })}
                             {/* Bus markers */}
                             {buses.filter(b => b.currentLat && b.currentLng).map(bus => (
@@ -664,101 +634,259 @@ const ParentView: React.FC = () => {
                                 </Marker>
                             ))}
                         </MapContainer>
-                    </div>
-                </div>
 
-                {/* Lịch sử điểm danh hôm nay */}
-                <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 14, padding: '16px 18px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', display: 'flex', flexDirection: 'column' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 700, fontSize: 15, color: 'var(--text-primary)' }}>
-                            <Calendar size={16} color="#7c3aed" />
-                            Điểm danh hôm nay
+                        {/* Bottom Sheet for Status */}
+                        <motion.div
+                            drag="y"
+                            dragConstraints={{ top: 0, bottom: 0 }}
+                            dragElastic={0.5}
+                            onDragEnd={(e, info) => {
+                                const isSwipeDown = info.offset.y > 50 || info.velocity.y > 300;
+                                const isSwipeUp = info.offset.y < -50 || info.velocity.y < -300;
+                                if (isSwipeDown) setSheetOpen(false);
+                                else if (isSwipeUp) setSheetOpen(true);
+                            }}
+                            animate={{ y: sheetOpen ? 0 : 'calc(100% - 85px)' }}
+                            initial={{ y: 'calc(100% - 85px)' }}
+                            transition={{ type: 'spring', damping: 25, stiffness: 220 }}
+                            style={{
+                                position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 1000,
+                                background: 'var(--surface)', borderRadius: '24px 24px 0 0',
+                                boxShadow: '0 -10px 40px rgba(0,0,0,0.15)',
+                                display: 'flex', flexDirection: 'column',
+                                height: '75%',
+                            }}
+                        >
+                            <div
+                                onClick={() => setSheetOpen(!sheetOpen)}
+                                style={{ padding: '16px 0', display: 'flex', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}
+                            >
+                                <div style={{ width: 48, height: 6, background: 'var(--border)', borderRadius: 4 }} />
+                            </div>
+
+                            {/* Collapsed view (Always visible at top of sheet) */}
+                            <div style={{ padding: '0 24px 14px', flexShrink: 0 }} onClick={() => setSheetOpen(true)}>
+                                {children.length === 0 ? (
+                                    <p style={{ margin: 0, fontWeight: 600, fontSize: 15, color: 'var(--text-primary)' }}>Chưa có học sinh</p>
+                                ) : children.map(child => {
+                                    const isOnBus = child.currentStatus === 'On_Bus';
+                                    return (
+                                        <p key={child._id} style={{ margin: '0 0 8px', fontWeight: 600, fontSize: 15, color: 'var(--text-primary)' }}>
+                                            {isOnBus ? '🟢' : '⚪'} Bé {child.fullName} - <span style={{ color: isOnBus ? 'var(--success)' : 'var(--text-secondary)' }}>{isOnBus ? 'Đang trên xe' : 'Chưa lên xe'}</span>
+                                        </p>
+                                    );
+                                })}
+                            </div>
+
+                            {/* Expanded Content (Children details) */}
+                            <div style={{ padding: '10px 24px 24px', overflowY: 'auto', flex: 1, opacity: sheetOpen ? 1 : 0, pointerEvents: sheetOpen ? 'auto' : 'none', borderTop: '1px solid var(--border)' }}>
+                                {children.map(child => {
+                                    const isOnBus = child.currentStatus === 'On_Bus';
+                                    // Determine the bus from logs or match child's route
+                                    const bus = isOnBus ? buses.find(b => b.isOnline) : null;
+                                    const latestChildLog = logs.find(l => l.student_id?._id === child._id);
+
+                                    return (
+                                        <div key={child._id} style={{ marginBottom: 16, padding: '16px', background: 'var(--bg)', borderRadius: 16, border: '1px solid var(--border)' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+                                                <div style={{
+                                                    width: 48, height: 48, borderRadius: 14, flexShrink: 0,
+                                                    background: 'linear-gradient(135deg,#7c3aed,#a855f7)',
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                    color: 'white', fontWeight: 700, fontSize: 20,
+                                                }}>
+                                                    {child.fullName.split(' ').pop()?.charAt(0)}
+                                                </div>
+                                                <div style={{ flex: 1, minWidth: 0 }}>
+                                                    <p style={{ margin: 0, fontWeight: 700, fontSize: 16, color: 'var(--text-primary)' }}>{child.fullName}</p>
+                                                    <div style={{ display: 'flex', gap: 6, marginTop: 4, flexWrap: 'wrap' }}>
+                                                        <span style={{ fontSize: 11, background: 'var(--purple-light)', color: '#7c3aed', padding: '3px 8px', borderRadius: 20, fontWeight: 600 }}>Lớp {child.class}</span>
+                                                        <span style={{ fontSize: 11, background: 'var(--surface-hover)', color: 'var(--text-secondary)', padding: '3px 8px', borderRadius: 20 }}>{child.studentCode}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, fontSize: 13, color: 'var(--text-secondary)' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                                    <CreditCard size={14} />
+                                                    <span>{child.rfid_uid || 'Chưa có thẻ'}</span>
+                                                </div>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                                    <Route size={14} />
+                                                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{child.route_id?.routeName || '—'}</span>
+                                                </div>
+                                            </div>
+
+                                            {latestChildLog && (
+                                                <div style={{ marginTop: 14, padding: '10px 12px', background: latestChildLog.action_type === 'Boarding' ? 'var(--success-light)' : 'var(--primary-light)', borderRadius: 10, fontSize: 12, display: 'flex', gap: 8, alignItems: 'center' }}>
+                                                    {latestChildLog.action_type === 'Boarding'
+                                                        ? <ArrowUpCircle size={16} color="var(--success)" />
+                                                        : <ArrowDownCircle size={16} color="var(--primary)" />}
+                                                    <span style={{ color: latestChildLog.action_type === 'Boarding' ? 'var(--success)' : 'var(--primary)', fontWeight: 600 }}>
+                                                        {latestChildLog.action_type === 'Boarding' ? 'Lên xe' : 'Xuống xe'}
+                                                    </span>
+                                                    <span style={{ color: 'var(--text-secondary)' }}>lúc {fmtTime(latestChildLog.scan_time)}</span>
+                                                </div>
+                                            )}
+
+                                            {isOnBus && bus && (
+                                                <div style={{ marginTop: 12, padding: '12px', background: 'var(--success-light)', borderRadius: 10 }}>
+                                                    <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: 'var(--success)' }}>🚍 Biển số xe: {bus.licensePlate}</p>
+                                                    <p style={{ margin: '6px 0 0', fontSize: 13, fontWeight: 700, color: 'var(--success)' }}>⚡ Tốc độ: {Math.round(bus.currentSpeed || 0)} km/h</p>
+                                                </div>
+                                            )}
+
+                                            {child.currentStatus !== 'Absent' && !isOnBus && (
+                                                <button
+                                                    onClick={() => handleMarkAbsent(child._id, child.fullName)}
+                                                    style={{
+                                                        marginTop: 14, width: '100%', padding: '12px',
+                                                        background: 'var(--danger-light)', color: 'var(--danger)',
+                                                        border: '1px solid rgba(239,68,68,0.3)', borderRadius: 10,
+                                                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                                                        cursor: 'pointer', fontWeight: 600, fontSize: 13
+                                                    }}
+                                                >
+                                                    <XCircle size={16} />
+                                                    Báo vắng mặt hôm nay
+                                                </button>
+                                            )}
+                                            {child.currentStatus === 'Absent' && (
+                                                <div style={{
+                                                    marginTop: 14, width: '100%', padding: '12px',
+                                                    background: 'var(--surface-hover)', color: 'var(--text-secondary)',
+                                                    border: '1px solid var(--border)', borderRadius: 10,
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                                                    fontWeight: 600, fontSize: 13
+                                                }}>
+                                                    <XCircle size={16} />
+                                                    Đã báo vắng mặt
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+
+                {activeTab === 'history' && (
+                    <>
+                        {/* Header */}
+                        <div style={{ marginBottom: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
+                            <div>
+                                <h1 style={{ fontSize: 24, fontWeight: 700, margin: 0 }}>Lịch sử hoạt động</h1>
+                                <p style={{ margin: '4px 0 0', opacity: 0.55, fontSize: 13 }}>Hôm nay</p>
+                            </div>
+                            <button onClick={fetchData} style={{
+                                display: 'flex', alignItems: 'center', gap: 6,
+                                padding: '7px 14px', borderRadius: 10, color: 'var(--text-primary)',
+                                background: 'var(--surface)', border: '1px solid var(--border)',
+                                cursor: 'pointer', fontSize: 13, fontWeight: 500,
+                            }}>
+                                <RefreshCw size={13} /> Cập nhật
+                            </button>
                         </div>
-                        <span style={{ fontSize: 12, background: 'var(--purple-light)', color: '#7c3aed', padding: '3px 10px', borderRadius: 20, fontWeight: 600 }}>
-                            {logs.length} lượt
-                        </span>
-                    </div>
-                    <div style={{ flex: 1, overflowY: 'auto', maxHeight: 310, display: 'flex', flexDirection: 'column', gap: 8 }}>
-                        {loading ? (
-                            <div style={{ textAlign: 'center', padding: '30px 0', color: '#94a3b8' }}>
-                                <Loader2 size={22} style={{ animation: 'spin 1s linear infinite', margin: '0 auto 8px' }} />
+
+                        {/* KPI cards */}
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 14, marginBottom: 24 }}>
+                            <motion.div whileHover={{ y: -2 }} style={{
+                                background: latestLog?.action_type === 'Boarding'
+                                    ? 'linear-gradient(135deg,#059669,#10b981)'
+                                    : latestLog?.action_type === 'Dropping'
+                                        ? 'linear-gradient(135deg,#2563eb,#3b82f6)'
+                                        : 'linear-gradient(135deg,#64748b,#94a3b8)',
+                                color: 'white', borderRadius: 16, padding: '18px 20px',
+                                boxShadow: '0 4px 18px rgba(0,0,0,0.13)',
+                            }}>
+                                <p style={{ margin: 0, opacity: 0.85, fontSize: 13 }}>Trạng thái mới nhất</p>
+                                <p style={{ margin: '8px 0 0', fontSize: 18, fontWeight: 700 }}>
+                                    {latestLog?.action_type === 'Boarding' ? '🟢 Đã lên xe'
+                                        : latestLog?.action_type === 'Dropping' ? '🔵 Đã xuống xe'
+                                            : '⚪ Chưa có dữ liệu'}
+                                </p>
+                                {latestLog && <p style={{ margin: '4px 0 0', fontSize: 12, opacity: 0.85 }}>{fmtTime(latestLog.scan_time)} · Xe {latestLog.bus_id?.licensePlate ?? '—'}</p>}
+                            </motion.div>
+                            <motion.div whileHover={{ y: -2 }} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, padding: '18px 20px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                    <div>
+                                        <p style={{ margin: 0, opacity: 0.5, fontSize: 13, color: 'var(--text-primary)' }}>Lượt quét thẻ</p>
+                                        <p style={{ margin: '8px 0 0', fontSize: 26, fontWeight: 700, color: 'var(--primary)' }}>{logs.length}</p>
+                                    </div>
+                                    <div style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--primary-light)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                        <CreditCard size={22} color="var(--primary)" />
+                                    </div>
+                                </div>
+                            </motion.div>
+                        </div>
+
+                        {/* Lịch sử điểm danh hôm nay */}
+                        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, padding: '20px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 700, fontSize: 16, color: 'var(--text-primary)', marginBottom: 16 }}>
+                                <Calendar size={18} color="#7c3aed" />
+                                Chi tiết điểm danh
                             </div>
-                        ) : logs.length === 0 ? (
-                            <div style={{ textAlign: 'center', padding: '30px 0', opacity: 0.45, fontSize: 13 }}>
-                                Chưa có lượt điểm danh hôm nay
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                                {loading ? (
+                                    <div style={{ textAlign: 'center', padding: '30px 0', color: '#94a3b8' }}>
+                                        <Loader2 size={24} style={{ animation: 'spin 1s linear infinite', margin: '0 auto 8px' }} />
+                                    </div>
+                                ) : logs.length === 0 ? (
+                                    <div style={{ textAlign: 'center', padding: '40px 0', opacity: 0.45, fontSize: 14 }}>
+                                        Chưa có lượt điểm danh hôm nay
+                                    </div>
+                                ) : (
+                                    <AnimatePresence initial={false}>
+                                        {logs.map((log, i) => (
+                                            <motion.div key={log._id}
+                                                initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
+                                                transition={{ delay: i < 5 ? i * 0.04 : 0 }}
+                                                style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', borderRadius: 12, background: 'var(--surface-hover)', border: '1px solid var(--border)' }}>
+                                                <div style={{
+                                                    width: 36, height: 36, borderRadius: 10, flexShrink: 0,
+                                                    background: log.action_type === 'Boarding' ? 'var(--success-light)' : 'var(--primary-light)',
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'center', border: `1px solid ${log.action_type === 'Boarding' ? 'rgba(16,185,129,0.3)' : 'rgba(59,130,246,0.3)'}`
+                                                }}>
+                                                    {log.action_type === 'Boarding' ? <ArrowUpCircle size={18} color="var(--success)" /> : <ArrowDownCircle size={18} color="var(--primary)" />}
+                                                </div>
+                                                <div style={{ flex: 1, minWidth: 0 }}>
+                                                    <p style={{ margin: 0, fontWeight: 600, fontSize: 14, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--text-primary)' }}>
+                                                        {log.student_id?.fullName ?? 'Không xác định'}
+                                                    </p>
+                                                    <p style={{ margin: '2px 0 0', fontSize: 12, opacity: 0.55, color: 'var(--text-primary)' }}>
+                                                        {log.bus_id?.licensePlate ?? '—'}
+                                                    </p>
+                                                </div>
+                                                <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                                                    <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: 'var(--text-primary)' }}>{fmtTime(log.scan_time)}</p>
+                                                    <p style={{ margin: '2px 0 0', fontSize: 12, fontWeight: 600, color: log.action_type === 'Boarding' ? 'var(--success)' : 'var(--primary)' }}>
+                                                        {log.action_type === 'Boarding' ? '↑ Lên' : '↓ Xuống'}
+                                                    </p>
+                                                </div>
+                                            </motion.div>
+                                        ))}
+                                    </AnimatePresence>
+                                )}
                             </div>
-                        ) : (
-                            <AnimatePresence initial={false}>
-                                {logs.map((log, i) => (
-                                    <motion.div key={log._id}
-                                        initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
-                                        transition={{ delay: i < 5 ? i * 0.04 : 0 }}
-                                        style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 11px', borderRadius: 10, background: 'var(--surface-hover)', border: '1px solid var(--border)' }}>
-                                        <div style={{
-                                            width: 32, height: 32, borderRadius: 8, flexShrink: 0,
-                                            background: log.action_type === 'Boarding' ? 'var(--success-light)' : 'var(--primary-light)',
-                                            display: 'flex', alignItems: 'center', justifyContent: 'center', border: `1px solid ${log.action_type === 'Boarding' ? 'rgba(16,185,129,0.3)' : 'rgba(59,130,246,0.3)'}`
-                                        }}>
-                                            {log.action_type === 'Boarding' ? <ArrowUpCircle size={15} color="var(--success)" /> : <ArrowDownCircle size={15} color="var(--primary)" />}
-                                        </div>
-                                        <div style={{ flex: 1, minWidth: 0 }}>
-                                            <p style={{ margin: 0, fontWeight: 600, fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--text-primary)' }}>
-                                                {log.student_id?.fullName ?? 'Không xác định'}
-                                            </p>
-                                            <p style={{ margin: '1px 0 0', fontSize: 10, opacity: 0.55, color: 'var(--text-primary)' }}>
-                                                {log.bus_id?.licensePlate ?? '—'}
-                                            </p>
-                                        </div>
-                                        <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                                            <p style={{ margin: 0, fontSize: 12, fontWeight: 600, color: 'var(--text-primary)' }}>{fmtTime(log.scan_time)}</p>
-                                            <p style={{ margin: '1px 0 0', fontSize: 10, fontWeight: 600, color: log.action_type === 'Boarding' ? 'var(--success)' : 'var(--primary)' }}>
-                                                {log.action_type === 'Boarding' ? '↑ Lên' : '↓ Xuống'}
-                                            </p>
-                                        </div>
-                                    </motion.div>
-                                ))}
-                            </AnimatePresence>
-                        )}
-                    </div>
-                </div>
+                        </div>
+                    </>
+                )}
+
+                {activeTab === 'settings' && (
+                    <ParentSettings />
+                )}
             </div>
 
-            {/* Thông tin tài khoản */}
-            <div onClick={openProfile} style={{
-                padding: '14px 18px', borderRadius: 12, cursor: 'pointer',
-                background: 'var(--surface)', border: '1px solid var(--border)',
-                display: 'flex', alignItems: 'center', gap: 12,
-                boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
-            }}>
-                <div style={{
-                    width: 40, height: 40, borderRadius: 10,
-                    background: 'linear-gradient(135deg,#7c3aed,#a855f7)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    color: 'white', fontWeight: 700, fontSize: 16, flexShrink: 0,
-                }}>
-                    <User size={18} />
-                </div>
-                <div>
-                    <p style={{ margin: 0, fontWeight: 600, fontSize: 14, color: 'var(--text-primary)' }}>{user?.fullName}</p>
-                    <p style={{ margin: '2px 0 0', fontSize: 11, opacity: 0.5, color: 'var(--text-primary)' }}>Phụ huynh · {user?.email}</p>
-                </div>
-                <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6, fontSize: 12 }}>
-                    <CheckCircle size={13} color="#059669" />
-                    <span style={{ color: '#059669', fontWeight: 500 }}>Tài khoản hoạt động</span>
-                </div>
-            </div>
-
-        </div>
-
-        {/* ── Absence Modal ── */}
-        {absentModal && (
-            <AbsenceModal
-                childName={absentModal.childName}
-                onConfirm={handleConfirmAbsent}
-                onClose={() => setAbsentModal(null)}
-                loading={absentLoading}
-            />
-        )}
+            {/* ── Absence Modal ── */}
+            {absentModal && (
+                <AbsenceModal
+                    childName={absentModal.childName}
+                    onConfirm={handleConfirmAbsent}
+                    onClose={() => setAbsentModal(null)}
+                    loading={absentLoading}
+                />
+            )}
         </>
     );
 };

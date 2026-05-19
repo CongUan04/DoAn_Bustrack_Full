@@ -108,13 +108,13 @@ const AppRoutes: React.FC = () => {
                 }
             >
                 <Route path="/admin/dashboard" element={<Dashboard />} />
-                <Route path="/admin/map"        element={<LiveMap />} />
+                <Route path="/admin/map" element={<LiveMap />} />
                 <Route path="/admin/attendance" element={<AttendancePage />} />
-                <Route path="/admin/students"   element={<StudentManagement />} />
-                <Route path="/admin/buses"      element={<BusManagement />} />
-                <Route path="/admin/routes"     element={<RouteManagement />} />
-                <Route path="/admin/alerts"     element={<AlertsPage />} />
-                <Route path="/admin/users"      element={<UserManagement />} />
+                <Route path="/admin/students" element={<StudentManagement />} />
+                <Route path="/admin/buses" element={<BusManagement />} />
+                <Route path="/admin/routes" element={<RouteManagement />} />
+                <Route path="/admin/alerts" element={<AlertsPage />} />
+                <Route path="/admin/users" element={<UserManagement />} />
             </Route>
 
             {/* ══════════════════════════════════════════════════
