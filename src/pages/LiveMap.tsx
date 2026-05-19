@@ -181,7 +181,7 @@ const toBusDisplay = (bus: BusData): BusDisplay => {
 // ── Main Component ────────────────────────────────────────────
 const LiveMap: React.FC = () => {
     const { user } = useAuth();
-    const { gpsUpdates, connected } = useSocket();
+    const { gpsUpdates, connected, recentSwipes } = useSocket();
     const isAdmin = user?.role === 'admin';
 
     const [buses, setBuses] = useState<BusDisplay[]>([]);
@@ -284,8 +284,8 @@ const LiveMap: React.FC = () => {
 
     const selected = buses.find(b => b._id === selectedId) ?? buses[0] ?? null;
 
-    // Fetch students on bus when selection changes
-    useEffect(() => {
+    // Fetch students on bus when selection changes or new swipe occurs
+    const fetchStudents = useCallback(() => {
         if (!selected) { setBusStudents([]); return; }
         setLoadingStudents(true);
         attendanceAPI.getBusStudentsToday(selected._id)
@@ -293,6 +293,20 @@ const LiveMap: React.FC = () => {
             .catch(() => setBusStudents([]))
             .finally(() => setLoadingStudents(false));
     }, [selected?._id]);
+
+    useEffect(() => {
+        fetchStudents();
+    }, [fetchStudents]);
+
+    const prevSwipeRef = useRef<any>(null);
+    useEffect(() => {
+        const latestSwipe = recentSwipes[0];
+        if (!latestSwipe || latestSwipe === prevSwipeRef.current) return;
+        prevSwipeRef.current = latestSwipe;
+        if (selected && latestSwipe.busId === selected._id) {
+            fetchStudents(); // Refresh student list when someone boards/drops
+        }
+    }, [recentSwipes, selected, fetchStudents]);
 
     if (loading) {
         return (
@@ -400,8 +414,14 @@ const LiveMap: React.FC = () => {
                             position={[bus.lat, bus.lng]}
                             icon={makeBusIcon(bus.status, bus._id === selectedId)}
                             eventHandlers={{
-                                click: () => setSelectedId(bus._id),
-                                popupopen: (e) => { popupRefs.current[bus._id] = e.popup; },
+                                click: () => {
+                                    if (selectedId === bus._id) fetchStudents();
+                                    else setSelectedId(bus._id);
+                                },
+                                popupopen: (e) => { 
+                                    popupRefs.current[bus._id] = e.popup; 
+                                    if (selectedId === bus._id) fetchStudents();
+                                },
                             }}
                         >
                             <Popup>
@@ -592,52 +612,53 @@ const LiveMap: React.FC = () => {
 
                             {/* Danh sách học sinh đã quẹt thẻ hôm nay */}
                             <div style={{ marginTop: 14, borderTop: '1px solid var(--border)', paddingTop: 12 }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
-                                    <GraduationCap size={13} color="#7c3aed" />
-                                    <p style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>Học sinh quẹt thẻ hôm nay</p>
-                                    <span style={{ marginLeft: 'auto', fontSize: 10, background: 'var(--purple-light)', color: '#7c3aed', padding: '2px 7px', borderRadius: 20, fontWeight: 700 }}>
-                                        {busStudents.length}
-                                    </span>
-                                </div>
-                                {loadingStudents ? (
-                                    <div style={{ textAlign: 'center', padding: '10px 0', color: '#94a3b8', fontSize: 12 }}>Đang tải...</div>
-                                ) : busStudents.length === 0 ? (
-                                    <div style={{ textAlign: 'center', padding: '10px 0', color: 'var(--text-muted)', fontSize: 12 }}>Chưa có học sinh quẹt thẻ</div>
-                                ) : (
-                                    <div style={{ maxHeight: 180, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 6 }}>
-                                        {busStudents.map((item, i) => (
-                                            <div key={i} style={{
-                                                display: 'flex', alignItems: 'center', gap: 8,
-                                                padding: '7px 9px', borderRadius: 8,
-                                                background: item.action_type === 'Boarding' ? 'var(--success-light)' : 'var(--primary-light)',
-                                                border: `1px solid ${item.action_type === 'Boarding' ? 'rgba(16,185,129,0.3)' : 'rgba(59,130,246,0.3)'}`,
-                                            }}>
-                                                <div style={{
-                                                    width: 26, height: 26, borderRadius: 8, flexShrink: 0,
-                                                    background: item.action_type === 'Boarding' ? '#059669' : '#2563eb',
-                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                    color: 'white', fontSize: 10, fontWeight: 700,
-                                                }}>
-                                                    {item.student.fullName.split(' ').pop()?.charAt(0)}
-                                                </div>
-                                                <div style={{ flex: 1, minWidth: 0 }}>
-                                                    <p style={{ margin: 0, fontSize: 11, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                                        {item.student.fullName}
-                                                    </p>
-                                                    <p style={{ margin: '1px 0 0', fontSize: 10, color: 'var(--text-muted)' }}>
-                                                        {item.student.class} · {item.student.studentCode}
-                                                    </p>
-                                                </div>
-                                                <span style={{
-                                                    fontSize: 9, fontWeight: 700, flexShrink: 0,
-                                                    color: item.action_type === 'Boarding' ? '#059669' : '#2563eb',
-                                                }}>
-                                                    {item.action_type === 'Boarding' ? '↑ Lên' : '↓ Xuống'}
+                                {(() => {
+                                    const currentStudentsOnBus = busStudents.filter(item => item.action_type === 'Boarding');
+                                    return (
+                                        <>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
+                                                <GraduationCap size={13} color="#7c3aed" />
+                                                <p style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>Đang trên xe</p>
+                                                <span style={{ marginLeft: 'auto', fontSize: 10, background: 'var(--purple-light)', color: '#7c3aed', padding: '2px 7px', borderRadius: 20, fontWeight: 700 }}>
+                                                    {currentStudentsOnBus.length} / {selected.capacity}
                                                 </span>
                                             </div>
-                                        ))}
-                                    </div>
-                                )}
+                                            {loadingStudents ? (
+                                                <div style={{ textAlign: 'center', padding: '10px 0', color: '#94a3b8', fontSize: 12 }}>Đang tải...</div>
+                                            ) : currentStudentsOnBus.length === 0 ? (
+                                                <div style={{ textAlign: 'center', padding: '10px 0', color: 'var(--text-muted)', fontSize: 12 }}>Chưa có học sinh trên xe</div>
+                                            ) : (
+                                                <div style={{ maxHeight: 180, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 6 }}>
+                                                    {currentStudentsOnBus.map((item, i) => (
+                                                        <div key={i} style={{
+                                                            display: 'flex', alignItems: 'center', gap: 8,
+                                                            padding: '7px 9px', borderRadius: 8,
+                                                            background: 'var(--success-light)',
+                                                            border: '1px solid rgba(16,185,129,0.3)',
+                                                        }}>
+                                                            <div style={{
+                                                                width: 26, height: 26, borderRadius: 8, flexShrink: 0,
+                                                                background: '#059669',
+                                                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                                color: 'white', fontSize: 10, fontWeight: 700,
+                                                            }}>
+                                                                {item.student.fullName.split(' ').pop()?.charAt(0)}
+                                                            </div>
+                                                            <div style={{ flex: 1, minWidth: 0 }}>
+                                                                <p style={{ margin: 0, fontSize: 11, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                                    {item.student.fullName}
+                                                                </p>
+                                                                <p style={{ margin: '1px 0 0', fontSize: 10, color: 'var(--text-muted)' }}>
+                                                                    {item.student.class} · {item.student.studentCode}
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </>
+                                    );
+                                })()}
                             </div>
                         </motion.div>
                     )}
@@ -677,35 +698,41 @@ const BusPopup: React.FC<{ bus: BusDisplay; isSelected?: boolean; students?: any
                 
                 {isSelected && (
                     <div style={{ marginTop: 10, borderTop: '1px dashed var(--border)', paddingTop: 10 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
-                            <GraduationCap size={13} color="#7c3aed" />
-                            <p style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>Học sinh trên xe</p>
-                        </div>
-                        {loadingStudents ? (
-                            <div style={{ fontSize: 11, color: '#64748b', textAlign: 'center' }}>Đang tải...</div>
-                        ) : students && students.length > 0 ? (
-                            <div style={{ maxHeight: 140, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 4, paddingRight: 4 }}>
-                                {students.map((item, idx) => (
-                                    <div key={idx} style={{ 
-                                        display: 'flex', justifyContent: 'space-between', alignItems: 'center', 
-                                        fontSize: 11, padding: '5px 8px', 
-                                        background: item.action_type === 'Boarding' ? 'var(--success-light)' : 'var(--primary-light)', 
-                                        border: `1px solid ${item.action_type === 'Boarding' ? 'rgba(16,185,129,0.3)' : 'rgba(59,130,246,0.3)'}`,
-                                        borderRadius: 6 
-                                    }}>
-                                        <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, flex: 1 }}>
-                                            <span style={{ fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.student.fullName}</span>
-                                            <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>{item.student.class}</span>
-                                        </div>
-                                        <span style={{ fontWeight: 700, fontSize: 10, color: item.action_type === 'Boarding' ? '#059669' : '#2563eb', marginLeft: 8 }}>
-                                            {item.action_type === 'Boarding' ? '↑ Lên' : '↓ Xuống'}
-                                        </span>
+                        {(() => {
+                            const currentStudents = students?.filter(item => item.action_type === 'Boarding') || [];
+                            return (
+                                <>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+                                        <GraduationCap size={13} color="#7c3aed" />
+                                        <p style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
+                                            Đang trên xe ({currentStudents.length}/{bus.capacity})
+                                        </p>
                                     </div>
-                                ))}
-                            </div>
-                        ) : (
-                            <div style={{ fontSize: 11, color: '#64748b', textAlign: 'center' }}>Chưa có học sinh</div>
-                        )}
+                                    {loadingStudents ? (
+                                        <div style={{ fontSize: 11, color: '#64748b', textAlign: 'center' }}>Đang tải...</div>
+                                    ) : currentStudents.length > 0 ? (
+                                        <div style={{ maxHeight: 140, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 4, paddingRight: 4 }}>
+                                            {currentStudents.map((item, idx) => (
+                                                <div key={idx} style={{ 
+                                                    display: 'flex', justifyContent: 'space-between', alignItems: 'center', 
+                                                    fontSize: 11, padding: '5px 8px', 
+                                                    background: 'var(--success-light)', 
+                                                    border: '1px solid rgba(16,185,129,0.3)',
+                                                    borderRadius: 6 
+                                                }}>
+                                                    <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, flex: 1 }}>
+                                                        <span style={{ fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.student.fullName}</span>
+                                                        <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>{item.student.class}</span>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div style={{ fontSize: 11, color: '#64748b', textAlign: 'center' }}>Chưa có học sinh</div>
+                                    )}
+                                </>
+                            );
+                        })()}
                     </div>
                 )}
             </div>

@@ -37,6 +37,7 @@ export interface RfidSwipe {
     status: 'success' | 'error';
     isAbnormal?: boolean;
     abnormalReason?: string;
+    stopName?: string | null;
 }
 
 interface SocketContextType {
@@ -102,7 +103,7 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         s.on('rfid_scan', (data: {
             studentName: string; studentId: string; studentCode: string; grade: string;
             busId: string; licensePlate: string; action: string; timestamp: string;
-            isAbnormal?: boolean; abnormalReason?: string;
+            stopName?: string | null; isAbnormal?: boolean; abnormalReason?: string;
         }) => {
             const swipe: RfidSwipe = {
                 id: `sw_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
@@ -115,6 +116,7 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                 action: data.action === 'Boarding' ? 'lên xe' : 'xuống xe',
                 timestamp: new Date(data.timestamp),
                 status: 'success',
+                stopName: data.stopName,
                 isAbnormal: data.isAbnormal,
                 abnormalReason: data.abnormalReason,
             };

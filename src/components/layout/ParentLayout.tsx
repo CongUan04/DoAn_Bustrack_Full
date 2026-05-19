@@ -26,7 +26,7 @@ const ParentLayout: React.FC = () => {
     // ── Web Notification: Khi có thẻ quẹt (Giai đoạn 1 + 3) ─────────
     React.useEffect(() => {
         if (!lastRfidEvent) return;
-        const { studentName, action, licensePlate, status, isAbnormal, abnormalReason } = lastRfidEvent;
+        const { studentName, action, licensePlate, status, isAbnormal, abnormalReason, stopName } = lastRfidEvent;
         
         // Phụ huynh không nhận cảnh báo thẻ lạ
         if (status === 'error') return;
@@ -38,7 +38,8 @@ const ParentLayout: React.FC = () => {
             return;
         }
 
-        const msg = `Con bạn (${studentName}) đã ${action.toUpperCase()} ${licensePlate} lúc ${timeStr}`;
+        const stopText = (action === 'xuống xe' && stopName) ? ` tại ${stopName}` : '';
+        const msg = `Con bạn (${studentName}) đã ${action.toUpperCase()}${stopText} ${licensePlate} lúc ${timeStr}`;
 
         if (action === 'lên xe') {
             toast.success(msg, { icon: '🚌' as any, autoClose: 6000 });
@@ -152,7 +153,7 @@ const ParentLayout: React.FC = () => {
                                             <p style={{ margin: 0, fontSize: 12.5, fontWeight: readIds.has(n.id) ? 400 : 600, color: 'var(--text-primary)' }}>
                                                 {n.action === 'lên xe' ? '🟢' : '🔵'} {n.studentName} — {n.action}
                                             </p>
-                                            <p style={{ margin: '2px 0 0', fontSize: 10, color: 'var(--text-secondary)' }}>{n.licensePlate} · {new Date(n.timestamp).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}</p>
+                                            <p style={{ margin: '2px 0 0', fontSize: 10, color: 'var(--text-secondary)' }}>{n.licensePlate}{n.action === 'xuống xe' && n.stopName ? ` · ${n.stopName}` : ''} · {new Date(n.timestamp).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}</p>
                                         </div>
                                     ))}
                                 </motion.div>

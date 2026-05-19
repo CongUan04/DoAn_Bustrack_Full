@@ -22,6 +22,7 @@ interface LogEntry {
     bus_id: { licensePlate: string } | null;
     scan_time: string;
     action_type: 'Boarding' | 'Dropping';
+    stop_name?: string | null;
 }
 
 interface BusInfo {
@@ -484,6 +485,11 @@ const DriverView: React.FC = () => {
                                             <p style={{ margin: '1px 0 0', fontSize: 10, fontWeight: 700, color: log.action_type === 'Boarding' ? '#10B981' : '#3B82F6' }}>
                                                 {log.action_type === 'Boarding' ? '↑ Lên xe' : '↓ Xuống xe'}
                                             </p>
+                                            {log.stop_name && (
+                                                <p style={{ margin: '1px 0 0', fontSize: 9, color: '#94a3b8' }}>
+                                                    {log.stop_name}
+                                                </p>
+                                            )}
                                         </div>
                                     </motion.div>
                                 ))}

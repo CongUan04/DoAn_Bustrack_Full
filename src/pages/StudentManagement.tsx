@@ -4,7 +4,7 @@ import {
     Search, Filter, Plus, Pencil, Trash2, X, Save,
     CreditCard, ChevronDown, GraduationCap,
     Phone, Bus, AlertTriangle, CheckCircle2, Loader2,
-    ChevronLeft, ChevronRight, RefreshCw, Scan, Copy, ShieldCheck, User,
+    ChevronLeft, ChevronRight, RefreshCw, Scan, Copy, ShieldCheck, User, MapPin,
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { studentAPI, routeAPI } from '../services/api';
@@ -22,6 +22,8 @@ interface StudentDoc {
     motherPhone?: string;
     parent_id?: { fullName: string; phone: string };
     route_id?: { _id: string; routeName: string };
+    classStartTime?: string;
+    assigned_stop?: string;
 }
 
 interface ParentCredentials {
@@ -43,16 +45,19 @@ interface FormData {
     parentEmail: string;
     route_id: string;
     isActive: boolean;
+    classStartTime: string;
+    assigned_stop: string;
 }
 
 const GRADES = ['6A', '6B', '6C', '7A', '7B', '7C', '8A', '8B', '8C', '9A', '9B', '9C'];
 const PAGE_SZ = 8;
 
-interface RouteOption { _id: string; routeName: string; }
+interface RouteOption { _id: string; routeName: string; stops?: { stopName: string }[]; }
 
 const EMPTY: FormData = {
     studentCode: '', fullName: '', class: '6A', rfid_uid: '',
     fatherPhone: '', motherPhone: '', parentName: '', parentEmail: '', route_id: '', isActive: true,
+    classStartTime: '07:30', assigned_stop: '',
 };
 
 // ── Parent Modal (Nested) ────────────────────────────────────
@@ -228,6 +233,9 @@ const StudentModal: React.FC<{
         return Object.keys(e).length === 0;
     };
 
+    // Lấy danh sách stops của tuyến đang chọn
+    const currentRouteStops = form.route_id ? routes.find(r => r._id === form.route_id)?.stops || [] : [];
+
     return (
         <div className="modal-backdrop" onClick={onClose}>
             <motion.div className="modal"
@@ -274,13 +282,38 @@ const StudentModal: React.FC<{
                                 <ChevronDown size={14} className="select-icon" />
                             </div>
                         </div>
+                        <div className="form-group">
+                            <label className="form-label">Giờ vào học</label>
+                            <input type="time" className="form-field"
+                                value={form.classStartTime}
+                                onChange={e => set('classStartTime', e.target.value)} />
+                        </div>
                         <div className="form-group form-group-full">
                             <label className="form-label"><Bus size={13} /> Tuyến xe</label>
                             <div className="select-wrap">
                                 <select className="form-field form-select" value={form.route_id}
-                                    onChange={e => set('route_id', e.target.value)}>
+                                    onChange={e => {
+                                        set('route_id', e.target.value);
+                                        set('assigned_stop', ''); // reset điểm dừng khi đổi tuyến
+                                    }}>
                                     <option value="">— Chưa chọn tuyến —</option>
                                     {routes.map((r: RouteOption) => <option key={r._id} value={r._id}>{r.routeName}</option>)}
+                                </select>
+                                <ChevronDown size={14} className="select-icon" />
+                            </div>
+                        </div>
+
+                        {/* Điểm dừng */}
+                        <div className="form-group form-group-full">
+                            <label className="form-label"><MapPin size={13} /> Điểm dừng (tuỳ chọn)</label>
+                            <div className="select-wrap">
+                                <select className="form-field form-select" value={form.assigned_stop}
+                                    disabled={!form.route_id || currentRouteStops.length === 0}
+                                    onChange={e => set('assigned_stop', e.target.value)}>
+                                    <option value="">— Chưa chọn điểm dừng —</option>
+                                    {currentRouteStops.map((s, i) => (
+                                        <option key={i} value={s.stopName}>{s.stopName}</option>
+                                    ))}
                                 </select>
                                 <ChevronDown size={14} className="select-icon" />
                             </div>
@@ -561,6 +594,7 @@ const StudentDetailModal: React.FC<{
                             <h3 style={{ fontSize: 20, fontWeight: 700, color: '#0f172a', marginBottom: 4 }}>{student.fullName}</h3>
                             <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
                                 <span className="grade-badge" style={{ fontSize: 12 }}>Lớp {student.class}</span>
+                                <span className="grade-badge" style={{ fontSize: 12, background: 'var(--primary-light)', color: 'var(--primary)' }}>🕒 {student.classStartTime || '07:30'}</span>
                                 <span className={`status-badge ${student.isActive ? 'status-active' : 'status-inactive'}`} style={{ fontSize: 12 }}>
                                     {student.isActive ? 'Đang học' : 'Nghỉ học'}
                                 </span>
@@ -572,6 +606,7 @@ const StudentDetailModal: React.FC<{
                         <div style={{ background: '#f8fafc', padding: 16, borderRadius: 12, border: '1px solid #e2e8f0' }}>
                             <h4 style={{ fontSize: 12, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}><Bus size={14} /> Thông tin Tuyến</h4>
                             <p style={{ fontSize: 14, color: '#334155', marginBottom: 8 }}><strong>Tuyến xe:</strong> {student.route_id?.routeName || '—'}</p>
+                            <p style={{ fontSize: 14, color: '#334155', marginBottom: 8 }}><strong>Điểm dừng:</strong> {student.assigned_stop ? <span style={{ color: '#0f766e', fontWeight: 600 }}>📍 {student.assigned_stop}</span> : '—'}</p>
                             <p style={{ fontSize: 14, color: '#334155' }}><strong>Thẻ RFID:</strong> <span className="rfid-chip" style={{ display: 'inline-flex', marginTop: 0 }}>{student.rfid_uid || '—'}</span></p>
                         </div>
                         
@@ -659,6 +694,8 @@ const StudentManagement: React.FC = () => {
                 motherPhone: form.motherPhone || undefined,
                 parentName: form.parentName || undefined,
                 parentEmail: form.parentEmail || undefined,
+                classStartTime: form.classStartTime,
+                assigned_stop: form.assigned_stop || undefined,
             };
             if (modal?.mode === 'add') {
                 const res = await studentAPI.create(payload);
@@ -732,6 +769,8 @@ const StudentManagement: React.FC = () => {
         parentName: s.parent_id?.fullName ?? '',
         parentEmail: '', // Usually don't populate parentEmail for edit to prevent accidental overwrites, or fetch from parent_id if needed
         route_id: s.route_id?._id ?? '', isActive: s.isActive,
+        classStartTime: s.classStartTime || '07:30',
+        assigned_stop: s.assigned_stop || '',
     });
 
     return (
@@ -834,10 +873,20 @@ const StudentManagement: React.FC = () => {
                                                 <span className="student-name">{s.fullName}</span>
                                             </div>
                                         </td>
-                                        <td><span className="grade-badge">{s.class}</span></td>
+                                        <td>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-start' }}>
+                                                <span className="grade-badge">{s.class}</span>
+                                                <span style={{ fontSize: 10, color: '#64748b', fontWeight: 600 }}>🕒 {s.classStartTime || '07:30'}</span>
+                                            </div>
+                                        </td>
                                         <td><span className="rfid-chip"><CreditCard size={12} />{s.rfid_uid ?? '—'}</span></td>
                                         <td className="phone-cell"><Phone size={12} />{s.parent_id?.phone ?? '—'}</td>
-                                        <td><span className="route-chip">{s.route_id?.routeName ?? '—'}</span></td>
+                                        <td>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-start' }}>
+                                                <span className="route-chip">{s.route_id?.routeName ?? '—'}</span>
+                                                {s.assigned_stop && <span style={{ fontSize: 10, color: '#64748b', fontWeight: 600 }}>📍 {s.assigned_stop}</span>}
+                                            </div>
+                                        </td>
                                         <td>
                                             <span className={`status-badge ${s.isActive ? 'status-active' : 'status-inactive'}`}>
                                                 {s.isActive ? 'Đang học' : 'Nghỉ học'}

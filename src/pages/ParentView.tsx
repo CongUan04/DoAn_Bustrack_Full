@@ -63,6 +63,7 @@ interface LogEntry {
     bus_id: { licensePlate: string } | null;
     scan_time: string;
     action_type: 'Boarding' | 'Dropping';
+    stop_name?: string | null;
 }
 
 interface BusInfo {
@@ -74,6 +75,8 @@ interface BusInfo {
     currentSpeed?: number;
     isOnline: boolean;
     route_id?: { _id: string; routeName: string } | null;
+    capacity: number;
+    driver_id?: { fullName: string; phone: string } | null;
 }
 
 interface RouteData {
@@ -404,6 +407,7 @@ const ParentView: React.FC = () => {
     const [buses, setBuses] = useState<BusInfo[]>([]);
     const [routes, setRoutes] = useState<RouteData[]>([]);
     const [loading, setLoading] = useState(true);
+    const [busStudentsCount, setBusStudentsCount] = useState<Record<string, number>>({});
 
     // Absent modal state
     const [absentModal, setAbsentModal] = useState<{ childId: string; childName: string } | null>(null);
@@ -511,7 +515,8 @@ const ParentView: React.FC = () => {
         if (latestSwipe.action === 'lên xe') {
             toast.success(`🟢 Lên xe · ${latestSwipe.licensePlate ?? ''}\n${latestSwipe.studentName}`);
         } else {
-            toast.info(`🔵 Xuống xe · ${latestSwipe.licensePlate ?? ''}\n${latestSwipe.studentName}`);
+            const stopText = latestSwipe.stopName ? ` tại ${latestSwipe.stopName}` : '';
+            toast.info(`🔵 Xuống xe${stopText} · ${latestSwipe.licensePlate ?? ''}\n${latestSwipe.studentName}`);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [latestSwipe]);
@@ -623,12 +628,37 @@ const ParentView: React.FC = () => {
                             })}
                             {/* Bus markers */}
                             {buses.filter(b => b.currentLat && b.currentLng).map(bus => (
-                                <Marker key={bus._id} position={[bus.currentLat!, bus.currentLng!]} icon={makeBusIcon(bus.isOnline)}>
+                                <Marker 
+                                    key={bus._id} 
+                                    position={[bus.currentLat!, bus.currentLng!]} 
+                                    icon={makeBusIcon(bus.isOnline)}
+                                    eventHandlers={{
+                                        popupopen: async () => {
+                                            try {
+                                                const res = await attendanceAPI.getBusStudentsToday(bus._id);
+                                                const currentStudents = res.data.data.filter((item: any) => item.action_type === 'Boarding');
+                                                setBusStudentsCount(prev => ({ ...prev, [bus._id]: currentStudents.length }));
+                                            } catch (e) {}
+                                        }
+                                    }}
+                                >
                                     <Popup>
-                                        <div style={{ padding: '10px 14px', minWidth: 160 }}>
+                                        <div style={{ padding: '10px 14px', minWidth: 180 }}>
                                             <p style={{ fontWeight: 700, margin: '0 0 4px', color: 'var(--text-primary)' }}>🚌 {bus.licensePlate}</p>
-                                            <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: 0 }}>{bus.route_id?.routeName ?? 'Chưa có tuyến'}</p>
-                                            <p style={{ fontSize: 12, margin: '4px 0 0', color: bus.isOnline ? 'var(--success)' : 'var(--danger)', fontWeight: 600 }}>{bus.isOnline ? `● Online · ${Math.round(bus.currentSpeed ?? 0)} km/h` : '● Offline'}</p>
+                                            <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: '0 0 6px' }}>{bus.route_id?.routeName ?? 'Chưa có tuyến'}</p>
+                                            
+                                            {bus.driver_id && (
+                                                <div style={{ marginBottom: 6, fontSize: 12, borderTop: '1px solid var(--border)', paddingTop: 6 }}>
+                                                    <p style={{ margin: '0 0 2px', fontWeight: 600, color: 'var(--text-primary)' }}>👨‍✈️ {bus.driver_id.fullName}</p>
+                                                    <p style={{ margin: 0, color: '#3b82f6' }}><a href={`tel:${bus.driver_id.phone}`} style={{textDecoration: 'none', color: '#3B82F6'}}>📞 {bus.driver_id.phone}</a></p>
+                                                </div>
+                                            )}
+
+                                            <div style={{ marginBottom: 6, fontSize: 12, borderTop: '1px solid var(--border)', paddingTop: 6 }}>
+                                                <p style={{ margin: 0, color: 'var(--text-primary)' }}>👥 Trên xe: <strong>{busStudentsCount[bus._id] ?? '...'} / {bus.capacity || 45}</strong></p>
+                                            </div>
+
+                                            <p style={{ fontSize: 12, margin: '6px 0 0', color: bus.isOnline ? 'var(--success)' : 'var(--danger)', fontWeight: 600 }}>{bus.isOnline ? `● Online · ${Math.round(bus.currentSpeed ?? 0)} km/h` : '● Offline'}</p>
                                         </div>
                                     </Popup>
                                 </Marker>
@@ -718,13 +748,18 @@ const ParentView: React.FC = () => {
                                             </div>
 
                                             {latestChildLog && (
-                                                <div style={{ marginTop: 14, padding: '10px 12px', background: latestChildLog.action_type === 'Boarding' ? 'var(--success-light)' : 'var(--primary-light)', borderRadius: 10, fontSize: 12, display: 'flex', gap: 8, alignItems: 'center' }}>
+                                                <div style={{ marginTop: 14, padding: '10px 12px', background: latestChildLog.action_type === 'Boarding' ? 'var(--success-light)' : 'var(--primary-light)', borderRadius: 10, fontSize: 12, display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
                                                     {latestChildLog.action_type === 'Boarding'
                                                         ? <ArrowUpCircle size={16} color="var(--success)" />
                                                         : <ArrowDownCircle size={16} color="var(--primary)" />}
                                                     <span style={{ color: latestChildLog.action_type === 'Boarding' ? 'var(--success)' : 'var(--primary)', fontWeight: 600 }}>
                                                         {latestChildLog.action_type === 'Boarding' ? 'Lên xe' : 'Xuống xe'}
                                                     </span>
+                                                    {latestChildLog.stop_name && (
+                                                        <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>
+                                                            tại {latestChildLog.stop_name}
+                                                        </span>
+                                                    )}
                                                     <span style={{ color: 'var(--text-secondary)' }}>lúc {fmtTime(latestChildLog.scan_time)}</span>
                                                 </div>
                                             )}

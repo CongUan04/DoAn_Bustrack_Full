@@ -10,7 +10,7 @@ import {
     Pencil, Trash2, Search,
 } from 'lucide-react';
 import { toast } from 'react-toastify';
-import { busAPI } from '../services/api';
+import { busAPI, userAPI, routeAPI } from '../services/api';
 
 // ── Types ─────────────────────────────────────────────────────
 interface BusRecord {
@@ -19,9 +19,11 @@ interface BusRecord {
     name: string;
     device_mac_address?: string;
     capacity: number;
+    driver_id?: { _id: string; fullName: string; phone: string };
     isOnline: boolean;
     isActive: boolean;
     createdAt: string;
+    route_id?: { _id: string; routeName: string; };
 }
 
 interface BusForm {
@@ -29,6 +31,8 @@ interface BusForm {
     name: string;
     device_mac_address: string;
     capacity: string;
+    driver_id: string;
+    route_id: string;
 }
 
 const EMPTY_FORM: BusForm = {
@@ -36,6 +40,8 @@ const EMPTY_FORM: BusForm = {
     name: '',
     device_mac_address: '',
     capacity: '45',
+    driver_id: '',
+    route_id: '',
 };
 
 // ── Copy button ────────────────────────────────────────────────
@@ -67,9 +73,11 @@ const BusModal: React.FC<{
     mode: 'add' | 'edit';
     initial?: BusForm;
     saving: boolean;
+    drivers: { _id: string; fullName: string; phone: string }[];
+    routes: { _id: string; routeName: string; }[];
     onSave: (f: BusForm) => void;
     onClose: () => void;
-}> = ({ mode, initial, saving, onSave, onClose }) => {
+}> = ({ mode, initial, saving, drivers, routes, onSave, onClose }) => {
     const [form, setForm] = useState<BusForm>(initial ?? { ...EMPTY_FORM });
     const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -142,6 +150,36 @@ const BusModal: React.FC<{
                                 value={form.name}
                                 onChange={e => set('name', e.target.value)}
                             />
+                        </div>
+
+                        {/* Tài xế */}
+                        <div className="form-group">
+                            <label className="form-label">Tài xế (tuỳ chọn)</label>
+                            <select
+                                className="form-field"
+                                value={form.driver_id}
+                                onChange={e => set('driver_id', e.target.value)}
+                            >
+                                <option value="">-- Chưa gán tài xế --</option>
+                                {drivers.map(d => (
+                                    <option key={d._id} value={d._id}>{d.fullName} ({d.phone})</option>
+                                ))}
+                            </select>
+                        </div>
+                        
+                        {/* Tuyến xe */}
+                        <div className="form-group">
+                            <label className="form-label">Tuyến xe (tuỳ chọn)</label>
+                            <select
+                                className="form-field"
+                                value={form.route_id}
+                                onChange={e => set('route_id', e.target.value)}
+                            >
+                                <option value="">-- Chưa gán tuyến --</option>
+                                {routes.map(r => (
+                                    <option key={r._id} value={r._id}>{r.routeName}</option>
+                                ))}
+                            </select>
                         </div>
 
                         {/* MAC Address */}
@@ -225,6 +263,8 @@ const DeleteConfirm: React.FC<{
 // ── Main Component ─────────────────────────────────────────────
 const BusManagement: React.FC = () => {
     const [buses, setBuses] = useState<BusRecord[]>([]);
+    const [drivers, setDrivers] = useState<{ _id: string; fullName: string; phone: string }[]>([]);
+    const [routes, setRoutes] = useState<{ _id: string; routeName: string; }[]>([]);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [search, setSearch] = useState('');
@@ -239,8 +279,14 @@ const BusManagement: React.FC = () => {
     const fetchBuses = useCallback(async () => {
         setLoading(true);
         try {
-            const res = await busAPI.getAll();
-            setBuses(res.data.data as BusRecord[]);
+            const [busRes, driverRes, routeRes] = await Promise.all([
+                busAPI.getAll(),
+                userAPI.getAll({ role: 'Driver' }),
+                routeAPI.getAll()
+            ]);
+            setBuses(busRes.data.data as BusRecord[]);
+            setDrivers(driverRes.data.data);
+            setRoutes(routeRes.data.data);
         } catch {
             showToast('❌ Không thể tải danh sách xe', 'error');
         } finally {
@@ -261,6 +307,8 @@ const BusManagement: React.FC = () => {
                 // để backend nhận biết cần xoá MAC address cũ (set null)
                 device_mac_address: form.device_mac_address.trim(),
                 capacity: Number(form.capacity) || 45,
+                driver_id: form.driver_id || null,
+                route_id: form.route_id || null,
             };
 
             if (modal?.mode === 'add') {
@@ -307,6 +355,8 @@ const BusManagement: React.FC = () => {
         name: b.name ?? '',
         device_mac_address: b.device_mac_address ?? '',
         capacity: String(b.capacity),
+        driver_id: b.driver_id?._id || '',
+        route_id: b.route_id?._id || '',
     });
 
     return (
@@ -376,6 +426,8 @@ const BusManagement: React.FC = () => {
                                 <th>MongoDB ID <span style={{ color: 'var(--warning)', fontSize: 10 }}>← ESP32</span></th>
                                 <th>Biển số</th>
                                 <th>Tên xe</th>
+                                <th>Tuyến đang chạy</th>
+                                <th>Tài xế</th>
                                 <th>MAC ESP32</th>
                                 <th>Sức chứa</th>
                                 <th>Trạng thái</th>
@@ -429,6 +481,30 @@ const BusManagement: React.FC = () => {
                                             fontStyle: bus.name ? 'normal' : 'italic',
                                         }}>
                                             {bus.name || '—'}
+                                        </td>
+                                        
+                                        <td>
+                                            {bus.route_id ? (
+                                                <span style={{ 
+                                                    background: 'var(--primary-light)', color: 'var(--primary)', 
+                                                    padding: '4px 8px', borderRadius: '6px', fontSize: 12, fontWeight: 600 
+                                                }}>
+                                                    {bus.route_id.routeName}
+                                                </span>
+                                            ) : (
+                                                <span style={{ color: '#94A3B8', fontStyle: 'italic', fontSize: 12 }}>Chưa gán</span>
+                                            )}
+                                        </td>
+
+                                        <td>
+                                            {bus.driver_id ? (
+                                                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                                    <span style={{ fontSize: 13, fontWeight: 600 }}>{bus.driver_id.fullName}</span>
+                                                    <span style={{ fontSize: 11, color: '#64748B' }}>{bus.driver_id.phone}</span>
+                                                </div>
+                                            ) : (
+                                                <span style={{ color: '#94A3B8', fontStyle: 'italic', fontSize: 12 }}>Chưa gán</span>
+                                            )}
                                         </td>
 
                                         <td>
@@ -492,6 +568,8 @@ const BusManagement: React.FC = () => {
                         mode={modal.mode}
                         initial={modal.bus ? toForm(modal.bus) : undefined}
                         saving={saving}
+                        drivers={drivers}
+                        routes={routes}
                         onSave={handleSave}
                         onClose={() => setModal(null)}
                     />
