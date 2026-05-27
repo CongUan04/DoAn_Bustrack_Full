@@ -23,6 +23,7 @@ interface StudentDoc {
     parent_id?: { fullName: string; phone: string };
     route_id?: { _id: string; routeName: string };
     classStartTime?: string;
+    classEndTime?: string;
     assigned_stop?: string;
     studyDays?: number[];
     photoUrl?: string;
@@ -48,6 +49,7 @@ interface FormData {
     route_id: string;
     isActive: boolean;
     classStartTime: string;
+    classEndTime: string;
     assigned_stop: string;
     studyDays: number[];
     photoUrl: string;
@@ -61,7 +63,7 @@ interface RouteOption { _id: string; routeName: string; stops?: { stopName: stri
 const EMPTY: FormData = {
     studentCode: '', fullName: '', class: '6A', rfid_uid: '',
     fatherPhone: '', motherPhone: '', parentName: '', parentEmail: '', route_id: '', isActive: true,
-    classStartTime: '07:30', assigned_stop: '', studyDays: [1, 2, 3, 4, 5], photoUrl: '',
+    classStartTime: '07:30', classEndTime: '16:30', assigned_stop: '', studyDays: [1, 2, 3, 4, 5], photoUrl: '',
 };
 
 // ── Parent Modal (Nested) ────────────────────────────────────
@@ -336,11 +338,19 @@ const StudentModal: React.FC<{
                                 <ChevronDown size={14} className="select-icon" />
                             </div>
                         </div>
-                        <div className="form-group">
-                            <label className="form-label">Giờ vào học</label>
-                            <input type="time" className="form-field"
-                                value={form.classStartTime}
-                                onChange={e => set('classStartTime', e.target.value)} />
+                        <div className="form-group" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                            <div>
+                                <label className="form-label">Giờ vào học</label>
+                                <input type="time" className="form-field"
+                                    value={form.classStartTime}
+                                    onChange={e => set('classStartTime', e.target.value)} />
+                            </div>
+                            <div>
+                                <label className="form-label">Giờ tan học</label>
+                                <input type="time" className="form-field"
+                                    value={form.classEndTime}
+                                    onChange={e => set('classEndTime', e.target.value)} />
+                            </div>
                         </div>
                         <div className="form-group form-group-full">
                             <label className="form-label">Lịch đi xe buýt (Tuần)</label>
@@ -862,6 +872,7 @@ const StudentManagement: React.FC = () => {
         parentEmail: '', // Usually don't populate parentEmail for edit to prevent accidental overwrites, or fetch from parent_id if needed
         route_id: s.route_id?._id ?? '', isActive: s.isActive,
         classStartTime: s.classStartTime || '07:30',
+        classEndTime: s.classEndTime || '16:30',
         assigned_stop: s.assigned_stop || '',
         studyDays: s.studyDays ?? [1, 2, 3, 4, 5],
         photoUrl: s.photoUrl || '',
