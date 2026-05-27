@@ -270,11 +270,11 @@ const LiveMap: React.FC = () => {
             const state = notifiedRef.current[bus._id];
 
             if (bus.distanceToSchool <= 0.1 && !state.arrived) {
-                toast.success(`Thông báo: Xe ${bus.licensePlate} đã đến trường!`, { autoClose: 5000, theme: "colored" });
+                // Không hiển thị toast để tránh spam màn hình Admin
                 state.arrived = true;
                 state.near = true;
             } else if (bus.distanceToSchool > 0.1 && bus.etaMins <= 5 && !state.near) {
-                toast.info(`Thông báo: Xe ${bus.licensePlate} sắp đến trường (khoảng ${Math.ceil(bus.etaMins)} phút)!`, { autoClose: 6000, theme: "colored" });
+                // Không hiển thị toast để tránh spam màn hình Admin
                 state.near = true;
             } else if (bus.distanceToSchool > 1) {
                 state.near = false;
@@ -504,7 +504,7 @@ const LiveMap: React.FC = () => {
                                         {bus.driver_id && (
                                             <div className="map-bus-row">
                                                 <Navigation size={11} />
-                                                <span>{bus.driver_id.fullName}</span>
+                                                <span>{bus.driver_id.fullName} - {bus.driver_id.phone}</span>
                                             </div>
                                         )}
                                         <div className="map-bus-row">

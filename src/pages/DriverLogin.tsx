@@ -15,13 +15,23 @@ const DriverLogin: React.FC = () => {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
+    const [rememberMe, setRememberMe] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [focused, setFocused] = useState<string | null>(null);
 
+    React.useEffect(() => {
+        const savedUsername = localStorage.getItem('bustrack_driver_remember_me');
+        if (savedUsername) {
+            setUsername(savedUsername);
+            setRememberMe(true);
+        }
+    }, []);
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!username || !password) { setError('Vui lòng nhập đầy đủ thông tin!'); return; }
+        if (!username.includes('@')) { setError('Chỉ hỗ trợ đăng nhập bằng địa chỉ Email (VD: @gmail.com)!'); return; }
         setLoading(true); setError('');
         const result = await login(username, password);
         setLoading(false);
@@ -29,6 +39,11 @@ const DriverLogin: React.FC = () => {
             if (result.role !== 'driver') {
                 setError('Tài khoản này không phải Tài xế. Vui lòng dùng cổng đăng nhập phù hợp.');
                 return;
+            }
+            if (rememberMe) {
+                localStorage.setItem('bustrack_driver_remember_me', username);
+            } else {
+                localStorage.removeItem('bustrack_driver_remember_me');
             }
             navigate('/driver');
         } else {
@@ -101,7 +116,7 @@ const DriverLogin: React.FC = () => {
                             boxShadow: '0 8px 24px rgba(245,158,11,0.2)',
                         }}
                     >
-                        🚌
+                        <Bus size={45} className="text-amber-400" />
                     </motion.div>
 
                     <div style={{ textAlign: 'center', marginBottom: 32 }}>
@@ -122,13 +137,13 @@ const DriverLogin: React.FC = () => {
 
                     <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                         <div>
-                            <label style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.55)', display: 'block', marginBottom: 7, letterSpacing: '0.3px', textTransform: 'uppercase' }}>Tên đăng nhập</label>
+                            <label style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.55)', display: 'block', marginBottom: 7, letterSpacing: '0.3px', textTransform: 'uppercase' }}>Địa chỉ Email</label>
                             <div style={{ position: 'relative' }}>
                                 <User size={17} style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: focused === 'u' ? '#FBBF24' : 'rgba(255,255,255,0.25)', transition: 'color 0.2s' }} />
                                 <input type="text" value={username}
                                     onChange={e => { setUsername(e.target.value); setError(''); }}
                                     onFocus={() => setFocused('u')} onBlur={() => setFocused(null)}
-                                    placeholder="Tên đăng nhập hoặc email..."
+                                    placeholder="VD: taixe@gmail.com..."
                                     style={inputStyle('u')} />
                             </div>
                         </div>
@@ -147,6 +162,13 @@ const DriverLogin: React.FC = () => {
                                     {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
                                 </button>
                             </div>
+                        </div>
+
+                        <div style={{ display: 'flex', justifyContent: 'flex-start', marginTop: -4 }}>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 13, color: 'rgba(255,255,255,0.5)', fontWeight: 500 }}>
+                                <input type="checkbox" checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)} style={{ cursor: 'pointer', accentColor: '#F59E0B', width: 14, height: 14 }} />
+                                Ghi nhớ đăng nhập
+                            </label>
                         </div>
 
                         <AnimatePresence>

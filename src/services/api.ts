@@ -6,7 +6,14 @@
 import axios from 'axios';
 
 // Base URL: cố định gọi thẳng đến Render
-const API_BASE = 'https://bustrack-backend-vq38.onrender.com/api';
+export const API_BASE = 'https://bustrack-backend-vq38.onrender.com/api';
+
+export const getMediaUrl = (path: string) => {
+    if (!path) return '';
+    if (path.startsWith('http')) return path;
+    const base = API_BASE.replace('/api', '');
+    return `${base}${path}`;
+};
 
 const api = axios.create({
     baseURL: API_BASE,

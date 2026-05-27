@@ -6,7 +6,7 @@ import {
     AlertTriangle, ToggleLeft, ToggleRight, Copy, ChevronLeft, ChevronRight, BellRing,
 } from 'lucide-react';
 import { toast } from 'react-toastify';
-import { userAPI } from '../services/api';
+import { userAPI, busAPI, getMediaUrl } from '../services/api';
 
 // ── Types ─────────────────────────────────────────────────────
 interface UserDoc {
@@ -183,6 +183,7 @@ const DeleteConfirm: React.FC<{ user: UserDoc; onConfirm: () => void; onClose: (
 // ── Main Page ──────────────────────────────────────────────────
 const UserManagement: React.FC = () => {
     const [users, setUsers] = useState<UserDoc[]>([]);
+    const [buses, setBuses] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [search, setSearch] = useState('');
@@ -205,6 +206,13 @@ const UserManagement: React.FC = () => {
             const res = await userAPI.getAll(params);
             const filteredUsers = (res.data.data as UserDoc[]).filter(u => u.role !== 'Admin');
             setUsers(filteredUsers);
+
+            try {
+                const busRes = await busAPI.getAll();
+                setBuses(busRes.data.data);
+            } catch (e) {
+                // silent
+            }
         } catch {
             showToast('❌ Không thể tải danh sách tài khoản', 'error');
         } finally { setLoading(false); }
@@ -277,6 +285,19 @@ const UserManagement: React.FC = () => {
         parent: users.filter(u => u.role === 'Parent').length,
         driver: users.filter(u => u.role === 'Driver').length,
     }), [users]);
+
+    // Map tài xế -> biển số xe
+    const driverBuses = useMemo(() => {
+        const map: Record<string, string> = {};
+        buses.forEach(b => {
+            if (b.driver_id && b.driver_id._id) {
+                map[b.driver_id._id] = b.licensePlate;
+            } else if (b.driver_id && typeof b.driver_id === 'string') {
+                map[b.driver_id] = b.licensePlate;
+            }
+        });
+        return map;
+    }, [buses]);
 
     return (
         <div className="crud-page">
@@ -382,7 +403,7 @@ const UserManagement: React.FC = () => {
                                                 <div className="student-cell">
                                                     <div className="student-avatar" style={{ background: `${rm.color}22`, color: rm.color, overflow: 'hidden' }}>
                                                         {u.avatar ? (
-                                                            <img src={u.avatar.startsWith('http') ? u.avatar : `${(import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace('/api', '')}${u.avatar}`} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                            <img src={getMediaUrl(u.avatar)} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                                         ) : (
                                                             u.fullName.split(' ').pop()?.charAt(0)
                                                         )}
@@ -392,13 +413,24 @@ const UserManagement: React.FC = () => {
                                             </td>
                                             <td style={{ fontFamily: 'monospace', fontSize: 12, color: '#475569' }}>{u.email}</td>
                                             <td>
-                                                <span style={{
-                                                    display: 'inline-flex', alignItems: 'center', gap: 5,
-                                                    padding: '3px 10px', borderRadius: 20, fontSize: 12, fontWeight: 600,
-                                                    background: `${rm.color}18`, color: rm.color,
-                                                }}>
-                                                    <RoleIcon size={12} />{rm.label}
-                                                </span>
+                                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 6 }}>
+                                                    <span style={{
+                                                        display: 'inline-flex', alignItems: 'center', gap: 5,
+                                                        padding: '3px 10px', borderRadius: 20, fontSize: 12, fontWeight: 600,
+                                                        background: `${rm.color}18`, color: rm.color,
+                                                    }}>
+                                                        <RoleIcon size={12} />{rm.label}
+                                                    </span>
+                                                    {u.role === 'Driver' && driverBuses[u._id] && (
+                                                        <span style={{
+                                                            display: 'inline-flex', alignItems: 'center', gap: 4,
+                                                            padding: '2px 8px', borderRadius: 12, fontSize: 11, fontWeight: 600,
+                                                            background: '#10B98115', color: '#059669',
+                                                        }}>
+                                                            <Bus size={10} /> Xe: {driverBuses[u._id]}
+                                                        </span>
+                                                    )}
+                                                </div>
                                             </td>
                                             <td style={{ fontSize: 13 }}>{u.phone ?? '—'}</td>
                                             <td>

@@ -9,7 +9,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Bus, Bell, LogOut, User, ChevronDown, Wifi, WifiOff, AlertTriangle, CheckCircle, X, KeyRound, Loader2, Save, Settings } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useSocket } from '../../contexts/SocketContext';
-import { authAPI, uploadAPI } from '../../services/api';
+import { authAPI, uploadAPI, getMediaUrl } from '../../services/api';
 import { toast } from 'react-toastify';
 
 const DriverProfileModal: React.FC<{ onClose: () => void, user: any }> = ({ onClose, user }) => {
@@ -17,6 +17,8 @@ const DriverProfileModal: React.FC<{ onClose: () => void, user: any }> = ({ onCl
     const [newPassword, setNewPassword] = useState('');
     const [saving, setSaving] = useState(false);
     const [uploadingAvatar, setUploadingAvatar] = useState(false);
+    const [pendingAvatar, setPendingAvatar] = useState<string | null>(null);
+    const [phone, setPhone] = useState(user?.phone || '');
     const { login, updateUser } = useAuth(); // Để cập nhật lại user data
 
     const handleSave = async () => {
@@ -35,6 +37,12 @@ const DriverProfileModal: React.FC<{ onClose: () => void, user: any }> = ({ onCl
                 dataToUpdate.currentPassword = currentPassword;
                 dataToUpdate.newPassword = newPassword;
             }
+            if (pendingAvatar) {
+                dataToUpdate.avatar = pendingAvatar;
+            }
+            if (phone !== (user?.phone || '')) {
+                dataToUpdate.phone = phone;
+            }
 
             if (Object.keys(dataToUpdate).length === 0) {
                 toast.info('Không có thay đổi nào');
@@ -48,11 +56,8 @@ const DriverProfileModal: React.FC<{ onClose: () => void, user: any }> = ({ onCl
             if (res.data?.data) {
                 const userData = res.data.data;
                 const token = userData.token || localStorage.getItem('bustrack_token');
-                localStorage.setItem('bustrack_user', JSON.stringify(userData));
                 if (token) localStorage.setItem('bustrack_token', token);
-                
-                // Mẹo nhỏ: reload lại trang để AuthContext lấy lại dữ liệu mới nhất nếu cần thiết
-                window.location.reload();
+                updateUser({ avatar: userData.avatar, fullName: userData.fullName, phone: userData.phone || phone });
             }
 
             toast.success('Cập nhật thông tin thành công');
@@ -82,8 +87,8 @@ const DriverProfileModal: React.FC<{ onClose: () => void, user: any }> = ({ onCl
                     <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
                         <div style={{ position: 'relative' }}>
                             <div style={{ width: 52, height: 52, borderRadius: 12, background: 'linear-gradient(135deg,#10B981,#059669)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 20, fontWeight: 'bold', overflow: 'hidden' }}>
-                                {user?.avatar ? (
-                                    <img src={user.avatar.startsWith('http') ? user.avatar : `${(import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace('/api', '')}${user.avatar}`} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                {(pendingAvatar || user?.avatar) ? (
+                                    <img src={getMediaUrl(pendingAvatar || user.avatar)} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                 ) : (
                                     user?.fullName?.charAt(0)
                                 )}
@@ -100,9 +105,7 @@ const DriverProfileModal: React.FC<{ onClose: () => void, user: any }> = ({ onCl
                                     try {
                                         const res = await uploadAPI.uploadImage(file);
                                         const avatarUrl = res.data.data.url;
-                                        const updateRes = await authAPI.updateProfile({ avatar: avatarUrl });
-                                        updateUser({ avatar: updateRes.data.data.avatar });
-                                        toast.success('Cập nhật ảnh đại diện thành công');
+                                        setPendingAvatar(avatarUrl);
                                     } catch (err: any) {
                                         toast.error(err.response?.data?.message || 'Lỗi tải ảnh lên');
                                     } finally {
@@ -113,7 +116,7 @@ const DriverProfileModal: React.FC<{ onClose: () => void, user: any }> = ({ onCl
                         </div>
                         <div>
                             <h3 style={{ margin: 0, color: 'white', fontSize: 16 }}>{user?.fullName}</h3>
-                            <p style={{ margin: 0, color: '#10B981', fontSize: 12 }}>Tài xế</p>
+                            <p style={{ margin: 0, color: '#10B981', fontSize: 12 }}>Tài xế {user?.phone ? `- ${user.phone}` : ''}</p>
                         </div>
                     </div>
                     <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer' }}><X size={20} /></button>
@@ -127,6 +130,10 @@ const DriverProfileModal: React.FC<{ onClose: () => void, user: any }> = ({ onCl
                     <div style={{ marginBottom: 16 }}>
                         <label style={{ display: 'block', fontSize: 12, color: '#94a3b8', marginBottom: 6 }}>Email đăng nhập</label>
                         <input value={user?.email || ''} readOnly style={{ width: '100%', boxSizing: 'border-box', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', padding: '10px 14px', borderRadius: 8, fontSize: 14 }} />
+                    </div>
+                    <div style={{ marginBottom: 16 }}>
+                        <label style={{ display: 'block', fontSize: 12, color: '#94a3b8', marginBottom: 6 }}>Số điện thoại</label>
+                        <input value={phone} onChange={e => setPhone(e.target.value)} style={{ width: '100%', boxSizing: 'border-box', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.2)', color: 'white', padding: '10px 14px', borderRadius: 8, fontSize: 14 }} />
                     </div>
                     
                     <div style={{ height: 1, background: 'rgba(255,255,255,0.07)', margin: '20px 0' }} />
@@ -292,7 +299,7 @@ const DriverLayout: React.FC = () => {
                                 color: 'white', fontWeight: 700, fontSize: 13, overflow: 'hidden'
                             }}>
                                 {user?.avatar ? (
-                                    <img src={user.avatar.startsWith('http') ? user.avatar : `${(import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace('/api', '')}${user.avatar}`} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                    <img src={getMediaUrl(user.avatar)} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                 ) : (
                                     user?.fullName?.charAt(0)
                                 )}
@@ -318,7 +325,7 @@ const DriverLayout: React.FC = () => {
                                 >
                                     <div style={{ padding: '12px 14px', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
                                         <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: 'white' }}>{user?.fullName}</p>
-                                        <p style={{ margin: '1px 0 0', fontSize: 11, color: '#64748b' }}>Tài xế</p>
+                                        <p style={{ margin: '1px 0 0', fontSize: 11, color: '#64748b' }}>Tài xế {user?.phone ? `• ${user.phone}` : ''}</p>
                                     </div>
                                     <button onClick={() => { setShowMenu(false); setShowProfile(true); }}
                                         style={{

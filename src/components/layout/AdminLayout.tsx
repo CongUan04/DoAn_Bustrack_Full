@@ -11,6 +11,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useSocket } from '../../contexts/SocketContext';
 import { toast } from 'react-toastify';
 import SettingsModal from './SettingsModal';
+import { getMediaUrl } from '../../services/api';
 
 // ── Hook cho Responsive ────────────────────────────────────────
 export const useIsMobile = () => {
@@ -162,7 +163,7 @@ const AdminSidebar: React.FC<{ collapsed: boolean; isMobile: boolean; onToggle: 
                                 color: 'white', fontWeight: 700, fontSize: 14,
                             }}>
                                 {user?.avatar ? (
-                                    <img src={user.avatar.startsWith('http') ? user.avatar : `${(import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace('/api', '')}${user.avatar}`} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                    <img src={getMediaUrl(user.avatar)} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                 ) : (
                                     user?.fullName?.charAt(0)
                                 )}
@@ -228,13 +229,7 @@ const AdminTopbar: React.FC<{ sidebarCollapsed: boolean; isMobile: boolean; onTo
             return;
         }
 
-        const msg = `${studentName} vừa ${action.toUpperCase()} ${licensePlate} lúc ${timeStr}`;
-
-        if (action === 'lên xe') {
-            toast.success(msg, { icon: '🟢' as any, autoClose: 5000 });
-        } else {
-            toast.info(msg, { icon: '🔵' as any, autoClose: 5000 });
-        }
+        // Không hiện thông báo (toast) cho các sự kiện lên/xuống xe bình thường để tránh spam màn hình Admin
     }, [lastRfidEvent]);
 
     // ── Cảnh báo SOS từ tài xế ─────────
@@ -436,7 +431,7 @@ const AdminTopbar: React.FC<{ sidebarCollapsed: boolean; isMobile: boolean; onTo
                             color: 'white', fontWeight: 700, fontSize: 13,
                         }}>
                             {user?.avatar ? (
-                                <img src={user.avatar.startsWith('http') ? user.avatar : `${(import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace('/api', '')}${user.avatar}`} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                <img src={getMediaUrl(user.avatar)} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                             ) : (
                                 user?.fullName?.charAt(0)
                             )}

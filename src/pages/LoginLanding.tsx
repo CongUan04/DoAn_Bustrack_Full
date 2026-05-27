@@ -1,213 +1,137 @@
-/**
- * LoginLanding.tsx – Trang chọn vai trò (Landing Page)
- * Cho phép người dùng chọn Admin / Phụ huynh / Tài xế trước khi đăng nhập
- */
-import React from 'react';
+import React, { useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Users, Bus, ArrowRight, MapPin } from 'lucide-react';
+import { Users, MapPin, Shield, Map, Bus } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-
-// Chỉ hiển thị 2 role công khai – Admin đăng nhập qua /admin
-const roles = [
-    {
-        key: 'parent',
-        label: 'Phụ huynh',
-        desc: 'Theo dõi xe của con, xem điểm danh và lịch sử hành trình',
-        icon: Users,
-        color: '#10B981',
-        colorDark: '#059669',
-        bg: 'linear-gradient(135deg, #064e3b 0%, #047857 50%, #059669 100%)',
-        badge: 'Parent',
-        badgeColor: '#6EE7B7',
-        path: '/login/parent',
-        emoji: '👨‍👩‍👧',
-    },
-    {
-        key: 'driver',
-        label: 'Tài xế',
-        desc: 'Điều khiển chuyến xe, quản lý điểm danh học sinh',
-        icon: Bus,
-        color: '#F59E0B',
-        colorDark: '#D97706',
-        bg: 'linear-gradient(135deg, #451a03 0%, #92400e 50%, #b45309 100%)',
-        badge: 'Driver',
-        badgeColor: '#FCD34D',
-        path: '/login/driver',
-        emoji: '🚌',
-    },
-];
 
 const LoginLanding: React.FC = () => {
     const navigate = useNavigate();
     const { isAuthenticated, user } = useAuth();
+    
+    const clicksRef = useRef(0);
+    const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    // Nếu đã đăng nhập thì redirect về trang chính
+    // Auto-Redirect logic
     if (isAuthenticated) {
-        const home = user?.role === 'admin' ? '/dashboard' : user?.role === 'driver' ? '/driver' : '/parent';
+        const home = user?.role === 'admin' ? '/admin/dashboard' : user?.role === 'driver' ? '/driver' : '/parent';
         navigate(home, { replace: true });
         return null;
     }
 
+    const handleHaptic = () => {
+        if (typeof navigator !== 'undefined' && navigator.vibrate) {
+            navigator.vibrate(50);
+        }
+    };
+
+    const handleAdminSecret = () => {
+        clicksRef.current += 1;
+        if (timeoutRef.current) clearTimeout(timeoutRef.current);
+        
+        timeoutRef.current = setTimeout(() => {
+            clicksRef.current = 0;
+        }, 2000);
+
+        if (clicksRef.current >= 3) {
+            clicksRef.current = 0;
+            if (timeoutRef.current) clearTimeout(timeoutRef.current);
+            navigate('/admin');
+        }
+    };
+
     return (
-        <div style={{
-            minHeight: '100vh',
-            background: 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 40%, #0f172a 100%)',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '24px 16px',
-            position: 'relative',
-            overflow: 'hidden',
-        }}>
-            {/* Background Grid */}
-            <div style={{
-                position: 'absolute', inset: 0, opacity: 0.04,
-                backgroundImage: 'linear-gradient(rgba(255,255,255,1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,1) 1px, transparent 1px)',
-                backgroundSize: '40px 40px',
-                pointerEvents: 'none',
-            }} />
+        <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-between p-6 relative overflow-hidden font-sans">
+            
+            {/* Background Texture & Glows */}
+            <div 
+                className="absolute inset-0 pointer-events-none opacity-[0.03]" 
+                style={{
+                    backgroundImage: 'linear-gradient(rgba(255,255,255,1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,1) 1px, transparent 1px)',
+                    backgroundSize: '40px 40px'
+                }} 
+            />
+            <div className="absolute top-0 left-0 w-72 h-72 bg-emerald-600/20 rounded-full blur-[100px] pointer-events-none" />
+            <div className="absolute bottom-0 right-0 w-72 h-72 bg-amber-600/20 rounded-full blur-[100px] pointer-events-none" />
 
-            {/* Glow blobs */}
-            <div style={{ position: 'absolute', top: '20%', left: '15%', width: 400, height: 400, background: 'radial-gradient(circle, rgba(59,130,246,0.12) 0%, transparent 70%)', borderRadius: '50%', pointerEvents: 'none' }} />
-            <div style={{ position: 'absolute', bottom: '15%', right: '10%', width: 350, height: 350, background: 'radial-gradient(circle, rgba(16,185,129,0.10) 0%, transparent 70%)', borderRadius: '50%', pointerEvents: 'none' }} />
-
-            <div style={{ position: 'relative', zIndex: 1, width: '100%', maxWidth: 1000 }}>
-                {/* Header */}
-                <motion.div
-                    initial={{ opacity: 0, y: -30 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-                    style={{ textAlign: 'center', marginBottom: 60 }}
-                >
-                    <div style={{
-                        display: 'inline-flex', alignItems: 'center', gap: 14,
-                        background: 'rgba(59,130,246,0.15)',
-                        border: '1px solid rgba(59,130,246,0.3)',
-                        borderRadius: 20, padding: '10px 20px', marginBottom: 28,
-                    }}>
-                        <div style={{
-                            width: 44, height: 44, borderRadius: 12,
-                            background: 'linear-gradient(135deg, #3B82F6, #60A5FA)',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            boxShadow: '0 4px 16px rgba(59,130,246,0.4)',
-                        }}>
-                            <MapPin size={22} color="white" />
-                        </div>
-                        <div style={{ textAlign: 'left' }}>
-                            <p style={{ margin: 0, fontSize: 20, fontWeight: 800, color: 'white', letterSpacing: '-0.5px' }}>BusTrack</p>
-                            <p style={{ margin: 0, fontSize: 11, color: 'rgba(255,255,255,0.45)', letterSpacing: '0.5px' }}>Hệ thống theo dõi xe đưa đón</p>
-                        </div>
+            {/* Phần 1: Khối Tiêu đề (Hero Header) */}
+            <motion.div
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.7 }}
+                className="relative z-10 w-full flex flex-col items-center text-center mt-8 sm:mt-16"
+            >
+                <div className="flex items-center gap-3 mb-6">
+                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-[0_0_20px_rgba(59,130,246,0.4)]">
+                        <MapPin size={24} className="text-white" />
                     </div>
+                    <h1 className="text-4xl sm:text-5xl font-extrabold text-white tracking-tight">BusTrack</h1>
+                </div>
+                <h2 className="text-xl sm:text-2xl font-semibold text-transparent bg-clip-text bg-gradient-to-r from-blue-300 to-emerald-300 mb-2">
+                    Giám sát an toàn. Mọi lúc, mọi nơi.
+                </h2>
+                <p className="text-slate-400 text-sm sm:text-base font-light">
+                    Vui lòng chọn vai trò của bạn để tiếp tục.
+                </p>
+            </motion.div>
 
-                    <h1 style={{ margin: '0 0 12px', fontSize: 38, fontWeight: 800, color: 'white', letterSpacing: '-1px', lineHeight: 1.15 }}>
-                        Xin chào! 👋
-                    </h1>
-                    <p style={{ fontSize: 16, color: 'rgba(255,255,255,0.45)', maxWidth: 500, margin: '0 auto' }}>
-                        Chọn vai trò của bạn để tiếp tục đăng nhập
+            {/* Phần 2: Khối Chức năng lõi (The Role Cards) */}
+            <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-4xl my-auto py-8">
+                
+                {/* Thẻ 1: Phụ huynh */}
+                <motion.div
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: 0.1 }}
+                    onClick={() => { handleHaptic(); navigate('/login/parent'); }}
+                    className="group cursor-pointer p-8 sm:p-10 bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl hover:-translate-y-2 hover:border-emerald-500/50 hover:bg-emerald-500/10 hover:shadow-[0_0_40px_-10px_rgba(16,185,129,0.3)] transition-all duration-300 flex flex-col items-center text-center relative overflow-hidden"
+                >
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/20 rounded-bl-full blur-2xl -mr-10 -mt-10 pointer-events-none transition-opacity duration-300 group-hover:opacity-100 opacity-0" />
+                    <div className="w-20 h-20 rounded-2xl bg-emerald-500/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 border border-emerald-500/20">
+                        <Users size={32} className="text-emerald-400" />
+                    </div>
+                    <h3 className="text-3xl text-white font-bold tracking-wide mb-3">Phụ huynh</h3>
+                    <p className="text-slate-400 text-sm sm:text-base leading-relaxed">
+                        Giám sát lộ trình, xem điểm danh và báo nghỉ trực tuyến.
                     </p>
                 </motion.div>
 
-                {/* Role Cards */}
-                <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-                    gap: 20,
-                    marginBottom: 40,
-                }}>
-                    {roles.map((role, i) => (
-                        <motion.div
-                            key={role.key}
-                            initial={{ opacity: 0, y: 40 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.2 + i * 0.12, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-                            whileHover={{ y: -8, scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                            onClick={() => navigate(role.path)}
-                            style={{
-                                cursor: 'pointer',
-                                background: 'rgba(255,255,255,0.04)',
-                                backdropFilter: 'blur(20px)',
-                                border: '1px solid rgba(255,255,255,0.10)',
-                                borderRadius: 24,
-                                padding: '32px 28px',
-                                position: 'relative',
-                                overflow: 'hidden',
-                                transition: 'border-color 0.3s',
-                            }}
-                            onMouseEnter={e => (e.currentTarget.style.borderColor = `${role.color}60`)}
-                            onMouseLeave={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.10)')}
-                        >
-                            {/* Card gradient glow */}
-                            <div style={{
-                                position: 'absolute', inset: 0, opacity: 0,
-                                background: `radial-gradient(ellipse at top left, ${role.color}20, transparent 60%)`,
-                                transition: 'opacity 0.3s',
-                            }} />
-
-                            {/* Top stripe */}
-                            <div style={{
-                                position: 'absolute', top: 0, left: 0, right: 0, height: 3,
-                                background: `linear-gradient(90deg, ${role.color}, ${role.colorDark})`,
-                                borderRadius: '24px 24px 0 0',
-                            }} />
-
-                            {/* Badge */}
-                            <div style={{
-                                position: 'absolute', top: 18, right: 18,
-                                fontSize: 10, fontWeight: 700, letterSpacing: '0.8px',
-                                padding: '3px 10px', borderRadius: 20,
-                                background: `${role.color}20`,
-                                color: role.badgeColor,
-                                border: `1px solid ${role.color}40`,
-                                textTransform: 'uppercase',
-                            }}>
-                                {role.badge}
-                            </div>
-
-                            {/* Icon */}
-                            <div style={{
-                                width: 64, height: 64, borderRadius: 18,
-                                background: `linear-gradient(135deg, ${role.color}30, ${role.colorDark}20)`,
-                                border: `1px solid ${role.color}40`,
-                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                marginBottom: 20, fontSize: 28,
-                            }}>
-                                <span>{role.emoji}</span>
-                            </div>
-
-                            {/* Text */}
-                            <h3 style={{ margin: '0 0 8px', fontSize: 20, fontWeight: 700, color: 'white' }}>
-                                {role.label}
-                            </h3>
-                            <p style={{ margin: '0 0 24px', fontSize: 13, color: 'rgba(255,255,255,0.45)', lineHeight: 1.6 }}>
-                                {role.desc}
-                            </p>
-
-                            {/* CTA */}
-                            <div style={{
-                                display: 'flex', alignItems: 'center', gap: 8,
-                                fontSize: 13, fontWeight: 700,
-                                color: role.badgeColor,
-                            }}>
-                                <span>Đăng nhập ngay</span>
-                                <ArrowRight size={15} />
-                            </div>
-                        </motion.div>
-                    ))}
-                </div>
-
-                {/* Footer */}
-                <motion.p
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.9 }}
-                    style={{ textAlign: 'center', fontSize: 12, color: 'rgba(255,255,255,0.2)', margin: 0 }}
+                {/* Thẻ 2: Tài xế */}
+                <motion.div
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: 0.2 }}
+                    onClick={() => { handleHaptic(); navigate('/login/driver'); }}
+                    className="group cursor-pointer p-8 sm:p-10 bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl hover:-translate-y-2 hover:border-amber-500/50 hover:bg-amber-500/10 hover:shadow-[0_0_40px_-10px_rgba(245,158,11,0.3)] transition-all duration-300 flex flex-col items-center text-center relative overflow-hidden"
                 >
-                    © 2026 BusTrack · Hệ thống Quản lý Xe Đưa đón Học sinh · Phiên bản 2.0
-                </motion.p>
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/20 rounded-bl-full blur-2xl -mr-10 -mt-10 pointer-events-none transition-opacity duration-300 group-hover:opacity-100 opacity-0" />
+                    <div className="w-20 h-20 rounded-2xl bg-amber-500/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 border border-amber-500/20">
+                        <Bus size={40} className="text-amber-400" />
+                    </div>
+                    <h3 className="text-3xl text-white font-bold tracking-wide mb-3">Tài xế</h3>
+                    <p className="text-slate-400 text-sm sm:text-base leading-relaxed">
+                        Kích hoạt chuyến đi và quản lý danh sách học sinh trên xe.
+                    </p>
+                </motion.div>
+
             </div>
+
+            {/* Phần 3: Chân trang (Footer & Hidden Security) */}
+            <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.5, delay: 0.4 }}
+                className="relative z-10 text-slate-500 text-xs sm:text-sm text-center mb-4"
+            >
+                <p className="mb-2">© 2026 BusTrack System</p>
+                <button 
+                    onClick={handleAdminSecret}
+                    className="bg-transparent border-none p-0 cursor-default hover:text-slate-400 focus:outline-none transition-colors"
+                    style={{ WebkitTapHighlightColor: 'transparent', userSelect: 'none' }}
+                >
+                    Phiên bản 2.0
+                </button>
+            </motion.div>
+            
         </div>
     );
 };

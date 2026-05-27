@@ -7,7 +7,7 @@ import {
     ChevronLeft, ChevronRight, RefreshCw, Scan, Copy, ShieldCheck, User, MapPin,
 } from 'lucide-react';
 import { toast } from 'react-toastify';
-import { studentAPI, routeAPI, uploadAPI } from '../services/api';
+import { studentAPI, routeAPI, uploadAPI, getMediaUrl } from '../services/api';
 import { io as ioClient, Socket } from 'socket.io-client';
 
 // ── Types ────────────────────────────────────────────────────
@@ -177,6 +177,7 @@ const StudentModal: React.FC<{
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [isWaitingForCard, setIsWaitingForCard] = useState(false);
     const [cardScanned, setCardScanned] = useState(false);
+    const [isUploading, setIsUploading] = useState(false);
     const socketRef = useRef<Socket | null>(null);
 
     // Cleanup socket on unmount
@@ -269,8 +270,10 @@ const StudentModal: React.FC<{
                                     background: 'var(--primary-light)', color: 'var(--primary)',
                                     display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32, fontWeight: 700, overflow: 'hidden'
                                 }}>
-                                    {form.photoUrl ? (
-                                        <img src={form.photoUrl.startsWith('http') ? form.photoUrl : `${(import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace('/api', '')}${form.photoUrl}`} alt="student" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                    {isUploading ? (
+                                        <Loader2 size={32} className="spin" color="var(--primary)" />
+                                    ) : form.photoUrl ? (
+                                        <img src={getMediaUrl(form.photoUrl)} alt="student" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                     ) : (
                                         form.fullName ? form.fullName.split(' ').pop()?.charAt(0) : <User size={32} />
                                     )}
@@ -288,15 +291,15 @@ const StudentModal: React.FC<{
                                                 toast.error('Ảnh quá lớn. Vui lòng chọn ảnh dưới 2MB.');
                                                 return;
                                             }
-                                            toast.info('Đang tải ảnh lên...');
+                                            setIsUploading(true);
                                             uploadAPI.uploadImage(file)
                                                 .then(res => {
                                                     set('photoUrl', res.data.data.url);
-                                                    toast.success('Tải ảnh lên thành công');
                                                 })
                                                 .catch(err => {
                                                     toast.error(err.response?.data?.message || 'Lỗi tải ảnh lên');
-                                                });
+                                                })
+                                                .finally(() => setIsUploading(false));
                                         }
                                     }} />
                                 </label>
@@ -491,7 +494,7 @@ const StudentModal: React.FC<{
                                         exit={{ opacity: 0 }}
                                         style={{ fontSize: 12, color: '#059669', marginTop: 6, fontWeight: 600 }}
                                     >
-                                        ✅ Đã đọc UID từ thẻ thật!
+                                        Đã đọc UID từ thẻ thật!
                                     </motion.p>
                                 )}
                             </AnimatePresence>
@@ -672,7 +675,7 @@ const StudentDetailModal: React.FC<{
                             display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, fontWeight: 700, color: '#475569', overflow: 'hidden'
                         }}>
                             {student.photoUrl ? (
-                                <img src={student.photoUrl} alt="student" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                <img src={getMediaUrl(student.photoUrl)} alt="student" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                             ) : (
                                 student.fullName.split(' ').pop()?.charAt(0)
                             )}
@@ -817,16 +820,16 @@ const StudentManagement: React.FC = () => {
 
                 // Toast thông báo kết quả
                 if (emailSentTo) {
-                    showToast(`✅ Đã thêm ${form.fullName} & gửi email đến ${emailSentTo}`);
+                    showToast(` Đã thêm ${form.fullName} & gửi email đến ${emailSentTo}`);
                 } else if (emailError) {
                     showToast(`⚠️ Đã thêm ${form.fullName} nhưng gửi email thất bại: ${emailError}`, 'error');
                 } else {
-                    showToast(`✅ Đã thêm học sinh ${form.fullName}`);
+                    showToast(` Đã thêm học sinh ${form.fullName}`);
                 }
             } else if (modal?.student) {
                 await studentAPI.update(modal.student._id, payload);
                 setModal(null);
-                showToast(`✅ Đã cập nhật ${form.fullName}`);
+                showToast(` Đã cập nhật ${form.fullName}`);
             }
             await fetchStudents();
         } catch (err: unknown) {
@@ -962,7 +965,7 @@ const StudentManagement: React.FC = () => {
                                             <div className="student-cell">
                                                 <div className="student-avatar" style={{ overflow: 'hidden' }}>
                                                     {s.photoUrl ? (
-                                                        <img src={s.photoUrl.startsWith('http') ? s.photoUrl : `${(import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace('/api', '')}${s.photoUrl}`} alt="student" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                        <img src={getMediaUrl(s.photoUrl)} alt="student" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                                     ) : (
                                                         s.fullName.split(' ').pop()?.charAt(0)
                                                     )}

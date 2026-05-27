@@ -23,6 +23,7 @@ const ParentLogin: React.FC = () => {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
+    const [rememberMe, setRememberMe] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [focused, setFocused] = useState<string | null>(null);
@@ -35,9 +36,18 @@ const ParentLogin: React.FC = () => {
     const [fpError, setFpError] = useState('');
     const [fpSuccess, setFpSuccess] = useState('');
 
+    useEffect(() => {
+        const savedUsername = localStorage.getItem('bustrack_parent_remember_me');
+        if (savedUsername) {
+            setUsername(savedUsername);
+            setRememberMe(true);
+        }
+    }, []);
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!username || !password) { setError('Vui lòng nhập đầy đủ thông tin!'); return; }
+        if (!username.includes('@')) { setError('Chỉ hỗ trợ đăng nhập bằng địa chỉ Email (VD: @gmail.com)!'); return; }
         setLoading(true); setError('');
         const result = await login(username, password);
         setLoading(false);
@@ -45,6 +55,11 @@ const ParentLogin: React.FC = () => {
             if (result.role !== 'parent') {
                 setError('Tài khoản này không phải Phụ huynh. Vui lòng dùng cổng đăng nhập phù hợp.');
                 return;
+            }
+            if (rememberMe) {
+                localStorage.setItem('bustrack_parent_remember_me', username);
+            } else {
+                localStorage.removeItem('bustrack_parent_remember_me');
             }
             navigate('/parent');
         } else {
@@ -191,17 +206,17 @@ const ParentLogin: React.FC = () => {
                             <motion.div key="login" initial={{ opacity: 0, x: -15 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -15 }} transition={{ duration: 0.3 }}>
                                 <div style={{ marginBottom: 32 }}>
                                     <h2 style={{ margin: '0 0 8px', fontSize: 26, fontWeight: 800, color: '#0f172a' }}>Chào mừng trở lại! 👋</h2>
-                                    <p style={{ margin: 0, fontSize: 14, color: '#64748b' }}>Đăng nhập bằng số điện thoại để tiếp tục</p>
+                                    <p style={{ margin: 0, fontSize: 14, color: '#64748b' }}>Đăng nhập bằng Gmail để tiếp tục</p>
                                 </div>
 
                                 <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
                                     <div>
-                                        <label style={{ fontSize: 13, fontWeight: 700, color: '#334155', display: 'block', marginBottom: 8 }}>Số điện thoại</label>
+                                        <label style={{ fontSize: 13, fontWeight: 700, color: '#334155', display: 'block', marginBottom: 8 }}>Địa chỉ Email</label>
                                         <div style={{ position: 'relative' }}>
-                                            <Phone size={18} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: focused === 'u' ? '#10B981' : '#94a3b8', transition: 'color 0.2s' }} />
+                                            <Users size={18} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: focused === 'u' ? '#10B981' : '#94a3b8', transition: 'color 0.2s' }} />
                                             <input type="text" value={username} onChange={e => { setUsername(e.target.value); setError(''); }}
                                                 onFocus={() => setFocused('u')} onBlur={() => setFocused(null)}
-                                                placeholder="VD: 0901234567..." style={inputStyle('u')} />
+                                                placeholder="VD: abc@gmail.com..." style={inputStyle('u')} />
                                         </div>
                                     </div>
 
@@ -220,7 +235,11 @@ const ParentLogin: React.FC = () => {
                                         </div>
                                     </div>
 
-                                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: -6 }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: -6 }}>
+                                        <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 13, color: '#64748b', fontWeight: 600 }}>
+                                            <input type="checkbox" checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)} style={{ cursor: 'pointer', accentColor: '#10B981', width: 16, height: 16, borderRadius: 4 }} />
+                                            Ghi nhớ đăng nhập
+                                        </label>
                                         <button type="button" onClick={() => { setFpFlow('identify'); setFpError(''); setFpSuccess(''); }}
                                             style={{ fontSize: 13, fontWeight: 600, color: '#10B981', background: 'none', border: 'none', cursor: 'pointer' }}
                                             onMouseEnter={e => (e.currentTarget.style.textDecoration = 'underline')}
@@ -272,8 +291,8 @@ const ParentLogin: React.FC = () => {
                                     <div>
                                         <h2 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: '#0f172a' }}>Khôi phục mật khẩu</h2>
                                         <p style={{ margin: '2px 0 0', fontSize: 13, color: '#64748b' }}>
-                                            {fpFlow === 'identify' && 'Nhập SĐT để nhận mã OTP'}
-                                            {fpFlow === 'otp' && 'Nhập mã 6 số gửi đến điện thoại'}
+                                            {fpFlow === 'identify' && 'Nhập Email (để nhận qua Gmail) hoặc SĐT (để nhận qua Telegram)'}
+                                            {fpFlow === 'otp' && 'Nhập mã 6 số được gửi đến Email/Telegram'}
                                             {fpFlow === 'reset' && 'Tạo mật khẩu mới cho tài khoản'}
                                         </p>
                                     </div>
@@ -283,10 +302,10 @@ const ParentLogin: React.FC = () => {
                                     {fpFlow === 'identify' && (
                                         <form onSubmit={handleIdentify} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                                             <div>
-                                                <label style={{ fontSize: 13, fontWeight: 700, color: '#334155', display: 'block', marginBottom: 8 }}>Số điện thoại</label>
+                                                <label style={{ fontSize: 13, fontWeight: 700, color: '#334155', display: 'block', marginBottom: 8 }}>Email hoặc Số điện thoại</label>
                                                 <div style={{ position: 'relative' }}>
-                                                    <Phone size={18} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: focused === 'fpi' ? '#10B981' : '#94a3b8' }} />
-                                                    <input type="text" value={fpIdentity} onChange={e => setFpIdentity(e.target.value)} placeholder="Nhập số điện thoại..." style={inputStyle('fpi')} onFocus={() => setFocused('fpi')} onBlur={() => setFocused(null)} />
+                                                    <Users size={18} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: focused === 'fpi' ? '#10B981' : '#94a3b8' }} />
+                                                    <input type="text" value={fpIdentity} onChange={e => setFpIdentity(e.target.value)} placeholder="Nhập Email hoặc SĐT..." style={inputStyle('fpi')} onFocus={() => setFocused('fpi')} onBlur={() => setFocused(null)} />
                                                 </div>
                                             </div>
                                             <button type="submit" disabled={fpLoading} style={{ height: 52, borderRadius: 14, border: 'none', cursor: 'pointer', background: 'linear-gradient(135deg, #10B981, #059669)', color: 'white', fontWeight: 700, fontSize: 15, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 8, boxShadow: '0 8px 20px rgba(16,185,129,0.35)' }}>

@@ -17,7 +17,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Khôi phục user + token từ localStorage khi reload
     const [user, setUser] = useState<User | null>(() => {
         const stored = localStorage.getItem('bustrack_user');
-        return stored ? JSON.parse(stored) : null;
+        if (!stored) return null;
+        try {
+            const parsed = JSON.parse(stored);
+            if (parsed && typeof parsed.role === 'string') {
+                // Đảm bảo role luôn là chữ thường để tránh lỗi infinite loop
+                parsed.role = parsed.role.toLowerCase();
+            }
+            return parsed;
+        } catch {
+            return null;
+        }
     });
     const [token, setToken] = useState<string | null>(() =>
         localStorage.getItem('bustrack_token')
@@ -38,6 +48,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     phone?: string;
                     isEmailSet?: boolean;
                     telegram_chat_id?: string;
+                    avatar?: string;
                     token: string;
                 };
             };
@@ -58,6 +69,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 role: mappedRole,
                 isEmailSet: payload.isEmailSet ?? true,
                 telegramChatId: payload.telegram_chat_id,
+                avatar: payload.avatar,
+                phone: payload.phone,
             };
 
             // Lưu vào state + localStorage

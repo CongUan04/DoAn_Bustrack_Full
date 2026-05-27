@@ -18,7 +18,7 @@ import {
     Lock, Sun, Moon, LogOut, Settings, Send
 } from 'lucide-react';
 import { toast } from 'react-toastify';
-import { attendanceAPI, busAPI, studentAPI, routeAPI, authAPI, uploadAPI } from '../services/api';
+import { attendanceAPI, busAPI, studentAPI, routeAPI, authAPI, uploadAPI, getMediaUrl } from '../services/api';
 import { useSocket } from '../contexts/SocketContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useOutletContext } from 'react-router-dom';
@@ -54,6 +54,7 @@ interface StudentInfo {
     fatherPhone?: string;
     motherPhone?: string;
     studyDays?: number[]; // 0=CN,1=T2,...,6=T7
+    photoUrl?: string;
     route_id?: { _id: string; routeName: string; stops: { lat: number; lng: number; order: number }[]; schoolPos?: { lat: number; lng: number } } | null;
 }
 
@@ -257,6 +258,7 @@ const ParentSettings: React.FC = () => {
     const [form, setForm] = useState({ email: '', currentPassword: '', newPassword: '', confirmPassword: '' });
     const [loading, setLoading] = useState(false);
     const [uploadingAvatar, setUploadingAvatar] = useState(false);
+    const [pendingAvatar, setPendingAvatar] = useState<string | null>(null);
     const [msg, setMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
     const [isDarkMode, setIsDarkMode] = useState(() => document.documentElement.classList.contains('dark-theme'));
 
@@ -283,10 +285,11 @@ const ParentSettings: React.FC = () => {
             const payload: Record<string, string> = {};
             if (form.email) payload.email = form.email;
             if (form.newPassword) { payload.currentPassword = form.currentPassword; payload.newPassword = form.newPassword; }
+            if (pendingAvatar) payload.avatar = pendingAvatar;
 
             const res = await authAPI.updateProfile(payload);
             const updated = res.data.data;
-            updateUser({ email: updated.email, isEmailSet: updated.isEmailSet });
+            updateUser({ email: updated.email, isEmailSet: updated.isEmailSet, avatar: updated.avatar });
             setMsg({ type: 'success', text: 'Cập nhật thành công!' });
             setForm(prev => ({ ...prev, currentPassword: '', newPassword: '', confirmPassword: '' }));
         } catch (err: unknown) {
@@ -308,8 +311,8 @@ const ParentSettings: React.FC = () => {
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         color: 'white', fontWeight: 700, fontSize: 28, overflow: 'hidden'
                     }}>
-                        {(user as any)?.avatar ? (
-                            <img src={(user as any).avatar.startsWith('http') ? (user as any).avatar : `${(import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace('/api', '')}${(user as any).avatar}`} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        {(pendingAvatar || (user as any)?.avatar) ? (
+                            <img src={getMediaUrl(pendingAvatar || (user as any).avatar)} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                         ) : (
                             user?.fullName?.split(' ').pop()?.charAt(0)
                         )}
@@ -326,10 +329,7 @@ const ParentSettings: React.FC = () => {
                             try {
                                 const res = await uploadAPI.uploadImage(file);
                                 const avatarUrl = res.data.data.url;
-                                const updateRes = await authAPI.updateProfile({ avatar: avatarUrl });
-                                const updated = updateRes.data.data;
-                                updateUser({ avatar: updated.avatar });
-                                toast.success('Cập nhật ảnh đại diện thành công');
+                                setPendingAvatar(avatarUrl);
                             } catch (err: any) {
                                 toast.error(err.response?.data?.message || 'Lỗi tải ảnh lên');
                             } finally {
@@ -554,23 +554,6 @@ const ParentView: React.FC = () => {
         }));
     }, [gpsUpdates]);
 
-    // Real-time RFID toast (only for own children)
-    const latestSwipe = recentSwipes[0];
-    const prevSwipeRef = useRef<typeof latestSwipe>(undefined);
-    useEffect(() => {
-        if (!latestSwipe || latestSwipe === prevSwipeRef.current) return;
-        prevSwipeRef.current = latestSwipe;
-        const isMyChild = childIds.includes(latestSwipe.studentId ?? '');
-        if (!isMyChild && children.length > 0) return;
-        if (latestSwipe.action === 'lên xe') {
-            toast.success(`🟢 Lên xe · ${latestSwipe.licensePlate ?? ''}\n${latestSwipe.studentName}`);
-        } else {
-            const stopText = latestSwipe.stopName ? ` tại ${latestSwipe.stopName}` : '';
-            toast.info(`🔵 Xuống xe${stopText} · ${latestSwipe.licensePlate ?? ''}\n${latestSwipe.studentName}`);
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [latestSwipe]);
-
     const latestLog = logs[0];
     const onlineBuses = buses.filter(b => b.isOnline);
 
@@ -773,9 +756,13 @@ const ParentView: React.FC = () => {
                                                     width: 48, height: 48, borderRadius: 14, flexShrink: 0,
                                                     background: 'linear-gradient(135deg,#7c3aed,#a855f7)',
                                                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                    color: 'white', fontWeight: 700, fontSize: 20,
+                                                    color: 'white', fontWeight: 700, fontSize: 20, overflow: 'hidden'
                                                 }}>
-                                                    {child.fullName.split(' ').pop()?.charAt(0)}
+                                                    {child.photoUrl ? (
+                                                        <img src={getMediaUrl(child.photoUrl)} alt={child.fullName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                    ) : (
+                                                        child.fullName.split(' ').pop()?.charAt(0)
+                                                    )}
                                                 </div>
                                                 <div style={{ flex: 1, minWidth: 0 }}>
                                                     <p style={{ margin: 0, fontWeight: 700, fontSize: 16, color: 'var(--text-primary)' }}>{child.fullName}</p>
@@ -848,6 +835,12 @@ const ParentView: React.FC = () => {
                                                 <div style={{ marginTop: 12, padding: '12px', background: 'var(--success-light)', borderRadius: 10 }}>
                                                     <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: 'var(--success)' }}>🚍 Biển số xe: {bus.licensePlate}</p>
                                                     <p style={{ margin: '6px 0 0', fontSize: 13, fontWeight: 700, color: 'var(--success)' }}>⚡ Tốc độ: {Math.round(bus.currentSpeed || 0)} km/h</p>
+                                                    {bus.driver_id && (
+                                                        <div style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid rgba(16, 185, 129, 0.2)' }}>
+                                                            <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: 'var(--success)' }}>👨‍✈️ Tài xế: {bus.driver_id.fullName}</p>
+                                                            <p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--success)', fontWeight: 600 }}>📞 SĐT: <a href={`tel:${bus.driver_id.phone}`} style={{ textDecoration: 'none', color: 'var(--success)' }}>{bus.driver_id.phone}</a></p>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             )}
 
