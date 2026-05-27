@@ -3,21 +3,78 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Bell, Search, ChevronDown, LogOut, User, Settings, Clock } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import ProfileModal from './ProfileModal';
+import { useSocket } from '../../contexts/SocketContext';
+import { alertAPI } from '../../services/api';
+import { Link } from 'react-router-dom';
 
-const MOCK_NOTIFICATIONS = [
-    { id: 1, text: 'Xe số 01 đã đến trường', time: '2 phút trước', read: false, type: 'info' },
-    { id: 2, text: 'Học sinh Nguyễn An chưa lên xe', time: '5 phút trước', read: false, type: 'warning' },
-    { id: 3, text: 'Phát hiện tốc độ cao tại đường Lê Lợi', time: '12 phút trước', read: false, type: 'danger' },
-    { id: 4, text: 'Điểm danh buổi sáng hoàn tất', time: '1 giờ trước', read: true, type: 'success' },
-];
+interface TopbarNotif {
+    id: string;
+    text: string;
+    time: string;
+    timestamp: string;
+    read: boolean;
+    type: 'info' | 'warning' | 'danger' | 'success';
+}
+
+const relTime = (ts: string) => {
+    const s = Math.floor((Date.now() - new Date(ts).getTime()) / 1000);
+    if (s < 60) return `Vừa xong`;
+    if (s < 3600) return `${Math.floor(s / 60)} phút trước`;
+    return `${Math.floor(s / 3600)} giờ trước`;
+};
 
 const Topbar: React.FC = () => {
     const { user, logout } = useAuth();
+    const { lastAlert } = useSocket();
     const [showNotif, setShowNotif] = useState(false);
     const [showProfile, setShowProfile] = useState(false);
     const [showProfileModal, setShowProfileModal] = useState(false);
-    const [notifications, setNotifications] = useState(MOCK_NOTIFICATIONS);
+    const [notifications, setNotifications] = useState<TopbarNotif[]>([]);
     const [currentTime, setCurrentTime] = useState(new Date());
+
+    // Fetch initial alerts
+    useEffect(() => {
+        if (!user) return;
+        const fetchAlerts = async () => {
+            try {
+                const res = await alertAPI.getAll({ isResolved: 'false', limit: '5' });
+                const alerts = res.data.data.map((a: any) => ({
+                    id: a._id,
+                    text: a.message,
+                    time: relTime(a.timestamp),
+                    timestamp: a.timestamp,
+                    read: false,
+                    type: a.severity === 'danger' ? 'danger' : a.severity === 'warning' ? 'warning' : 'info'
+                }));
+                setNotifications(alerts);
+            } catch (err) {
+                console.error('Failed to fetch initial alerts', err);
+            }
+        };
+        fetchAlerts();
+    }, [user?.role]);
+
+    // Handle incoming real-time alerts
+    useEffect(() => {
+        if (!user || !lastAlert) return;
+        const newNotif: TopbarNotif = {
+            id: lastAlert._id || Date.now().toString(),
+            text: lastAlert.message,
+            time: 'Vừa xong',
+            timestamp: lastAlert.timestamp || new Date().toISOString(),
+            read: false,
+            type: lastAlert.severity === 'danger' ? 'danger' : lastAlert.severity === 'warning' ? 'warning' : 'info'
+        };
+        setNotifications(prev => [newNotif, ...prev.filter(n => n.id !== newNotif.id)].slice(0, 5));
+    }, [lastAlert, user?.role]);
+
+    // Update relative time periodically
+    useEffect(() => {
+        const timer = setInterval(() => {
+            setNotifications(prev => prev.map(n => ({ ...n, time: relTime(n.timestamp) })));
+        }, 60000);
+        return () => clearInterval(timer);
+    }, []);
 
     useEffect(() => {
         const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -26,8 +83,11 @@ const Topbar: React.FC = () => {
 
     const unreadCount = notifications.filter(n => !n.read).length;
 
-    const markAllRead = () => {
-        setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+    const markAllRead = async () => {
+        try {
+            if (user?.role === 'admin') await alertAPI.acknowledgeAll();
+            setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+        } catch (err) {}
     };
 
     return (
@@ -104,7 +164,11 @@ const Topbar: React.FC = () => {
                                     ))}
                                 </div>
                                 <div className="notif-footer">
-                                    <a href="#">Xem tất cả thông báo</a>
+                                    {user?.role === 'admin' ? (
+                                        <Link to="/admin/alerts" onClick={() => setShowNotif(false)}>Xem tất cả cảnh báo</Link>
+                                    ) : (
+                                        <span></span>
+                                    )}
                                 </div>
                             </motion.div>
                         )}

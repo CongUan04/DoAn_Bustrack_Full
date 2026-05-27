@@ -7,7 +7,7 @@ import {
     ChevronLeft, ChevronRight, RefreshCw, Scan, Copy, ShieldCheck, User, MapPin,
 } from 'lucide-react';
 import { toast } from 'react-toastify';
-import { studentAPI, routeAPI } from '../services/api';
+import { studentAPI, routeAPI, uploadAPI } from '../services/api';
 import { io as ioClient, Socket } from 'socket.io-client';
 
 // ── Types ────────────────────────────────────────────────────
@@ -24,6 +24,8 @@ interface StudentDoc {
     route_id?: { _id: string; routeName: string };
     classStartTime?: string;
     assigned_stop?: string;
+    studyDays?: number[];
+    photoUrl?: string;
 }
 
 interface ParentCredentials {
@@ -47,6 +49,8 @@ interface FormData {
     isActive: boolean;
     classStartTime: string;
     assigned_stop: string;
+    studyDays: number[];
+    photoUrl: string;
 }
 
 const GRADES = ['6A', '6B', '6C', '7A', '7B', '7C', '8A', '8B', '8C', '9A', '9B', '9C'];
@@ -57,7 +61,7 @@ interface RouteOption { _id: string; routeName: string; stops?: { stopName: stri
 const EMPTY: FormData = {
     studentCode: '', fullName: '', class: '6A', rfid_uid: '',
     fatherPhone: '', motherPhone: '', parentName: '', parentEmail: '', route_id: '', isActive: true,
-    classStartTime: '07:30', assigned_stop: '',
+    classStartTime: '07:30', assigned_stop: '', studyDays: [1, 2, 3, 4, 5], photoUrl: '',
 };
 
 // ── Parent Modal (Nested) ────────────────────────────────────
@@ -258,6 +262,53 @@ const StudentModal: React.FC<{
 
                 <form onSubmit={e => { e.preventDefault(); if (validate()) onSave(form); }} className="modal-body">
                     <div className="modal-grid">
+                        <div className="form-group" style={{ gridColumn: '1 / -1', display: 'flex', alignItems: 'center', gap: 16 }}>
+                            <div style={{ position: 'relative' }}>
+                                <div style={{
+                                    width: 80, height: 80, borderRadius: 16,
+                                    background: 'var(--primary-light)', color: 'var(--primary)',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32, fontWeight: 700, overflow: 'hidden'
+                                }}>
+                                    {form.photoUrl ? (
+                                        <img src={form.photoUrl.startsWith('http') ? form.photoUrl : `${(import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace('/api', '')}${form.photoUrl}`} alt="student" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                    ) : (
+                                        form.fullName ? form.fullName.split(' ').pop()?.charAt(0) : <User size={32} />
+                                    )}
+                                </div>
+                                <label style={{
+                                    position: 'absolute', bottom: -5, right: -5, width: 28, height: 28, borderRadius: '50%',
+                                    background: 'var(--primary)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    cursor: 'pointer', border: '2px solid var(--surface)', boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                                }} title="Tải lên ảnh học sinh">
+                                    <Plus size={16} />
+                                    <input type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => {
+                                        const file = e.target.files?.[0];
+                                        if (file) {
+                                            if (file.size > 2 * 1024 * 1024) {
+                                                toast.error('Ảnh quá lớn. Vui lòng chọn ảnh dưới 2MB.');
+                                                return;
+                                            }
+                                            toast.info('Đang tải ảnh lên...');
+                                            uploadAPI.uploadImage(file)
+                                                .then(res => {
+                                                    set('photoUrl', res.data.data.url);
+                                                    toast.success('Tải ảnh lên thành công');
+                                                })
+                                                .catch(err => {
+                                                    toast.error(err.response?.data?.message || 'Lỗi tải ảnh lên');
+                                                });
+                                        }
+                                    }} />
+                                </label>
+                            </div>
+                            <div>
+                                <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600, color: 'var(--text-primary)' }}>Ảnh học sinh</h3>
+                                <p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--text-secondary)' }}>Định dạng JPG, PNG. Tối đa 2MB.</p>
+                                {form.photoUrl && (
+                                    <button type="button" onClick={() => set('photoUrl', '')} style={{ marginTop: 8, background: 'none', border: 'none', color: 'var(--danger)', fontSize: 13, cursor: 'pointer', padding: 0 }}>Xóa ảnh</button>
+                                )}
+                            </div>
+                        </div>
                         <div className="form-group">
                             <label className="form-label">Mã học sinh <span className="required">*</span></label>
                             <input className={`form-field ${errors.studentCode ? 'error' : ''}`}
@@ -287,6 +338,38 @@ const StudentModal: React.FC<{
                             <input type="time" className="form-field"
                                 value={form.classStartTime}
                                 onChange={e => set('classStartTime', e.target.value)} />
+                        </div>
+                        <div className="form-group form-group-full">
+                            <label className="form-label">Lịch đi xe buýt (Tuần)</label>
+                            <div style={{ display: 'flex', gap: 6, marginTop: 4 }}>
+                                {[
+                                    { v: 1, l: 'T2' }, { v: 2, l: 'T3' }, { v: 3, l: 'T4' },
+                                    { v: 4, l: 'T5' }, { v: 5, l: 'T6' }, { v: 6, l: 'T7' }, { v: 0, l: 'CN' }
+                                ].map(day => {
+                                    const isActive = form.studyDays.includes(day.v);
+                                    return (
+                                        <button
+                                            key={day.v}
+                                            type="button"
+                                            onClick={() => {
+                                                const updated = isActive ? form.studyDays.filter(d => d !== day.v) : [...form.studyDays, day.v].sort();
+                                                setForm(p => ({ ...p, studyDays: updated }));
+                                            }}
+                                            style={{
+                                                flex: 1, height: 36, borderRadius: 8,
+                                                border: `1.5px solid ${isActive ? '#0f766e' : 'var(--border)'}`,
+                                                background: isActive ? '#f0fdfa' : 'var(--surface)',
+                                                color: isActive ? '#0f766e' : 'var(--text-secondary)',
+                                                fontWeight: isActive ? 700 : 500, fontSize: 13,
+                                                cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                transition: 'all 0.2s'
+                                            }}
+                                        >
+                                            {day.l}
+                                        </button>
+                                    );
+                                })}
+                            </div>
                         </div>
                         <div className="form-group form-group-full">
                             <label className="form-label"><Bus size={13} /> Tuyến xe</label>
@@ -586,9 +669,13 @@ const StudentDetailModal: React.FC<{
                     <div style={{ display: 'flex', gap: '20px', marginBottom: '24px', alignItems: 'center' }}>
                         <div style={{ 
                             width: 64, height: 64, borderRadius: '50%', background: '#e2e8f0', 
-                            display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, fontWeight: 700, color: '#475569' 
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, fontWeight: 700, color: '#475569', overflow: 'hidden'
                         }}>
-                            {student.fullName.split(' ').pop()?.charAt(0)}
+                            {student.photoUrl ? (
+                                <img src={student.photoUrl} alt="student" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            ) : (
+                                student.fullName.split(' ').pop()?.charAt(0)
+                            )}
                         </div>
                         <div>
                             <h3 style={{ fontSize: 20, fontWeight: 700, color: '#0f172a', marginBottom: 4 }}>{student.fullName}</h3>
@@ -696,6 +783,8 @@ const StudentManagement: React.FC = () => {
                 parentEmail: form.parentEmail || undefined,
                 classStartTime: form.classStartTime,
                 assigned_stop: form.assigned_stop || undefined,
+                studyDays: form.studyDays,
+                photoUrl: form.photoUrl || undefined,
             };
             if (modal?.mode === 'add') {
                 const res = await studentAPI.create(payload);
@@ -771,6 +860,8 @@ const StudentManagement: React.FC = () => {
         route_id: s.route_id?._id ?? '', isActive: s.isActive,
         classStartTime: s.classStartTime || '07:30',
         assigned_stop: s.assigned_stop || '',
+        studyDays: s.studyDays ?? [1, 2, 3, 4, 5],
+        photoUrl: s.photoUrl || '',
     });
 
     return (
@@ -869,7 +960,13 @@ const StudentManagement: React.FC = () => {
                                         <td><span className="code-chip">{s.studentCode}</span></td>
                                         <td>
                                             <div className="student-cell">
-                                                <div className="student-avatar">{s.fullName.split(' ').pop()?.charAt(0)}</div>
+                                                <div className="student-avatar" style={{ overflow: 'hidden' }}>
+                                                    {s.photoUrl ? (
+                                                        <img src={s.photoUrl.startsWith('http') ? s.photoUrl : `${(import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace('/api', '')}${s.photoUrl}`} alt="student" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                    ) : (
+                                                        s.fullName.split(' ').pop()?.charAt(0)
+                                                    )}
+                                                </div>
                                                 <span className="student-name">{s.fullName}</span>
                                             </div>
                                         </td>

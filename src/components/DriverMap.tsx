@@ -12,9 +12,10 @@ import 'leaflet/dist/leaflet.css';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Navigation, MapPin, Route, ChevronRight, ChevronLeft,
-    Loader2, RefreshCw, CheckCircle, ArrowUp,
+    Loader2, RefreshCw, CheckCircle, ArrowUp, Users,
 } from 'lucide-react';
 import { toast } from 'react-toastify';
+import { studentAPI } from '../services/api';
 
 // Fix leaflet default icon
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -66,7 +67,8 @@ const CenterOnBus: React.FC<{ lat: number; lng: number; active: boolean }> = ({ 
     const map = useMap();
     useEffect(() => {
         if (active) {
-            map.flyTo([lat, lng], map.getZoom(), { animate: true, duration: 1.0 });
+            // Dùng panTo thay vì flyTo để theo dõi xe mượt mà hơn khi GPS cập nhật liên tục
+            map.panTo([lat, lng], { animate: true, duration: 0.5 });
         }
     }, [lat, lng, active, map]);
     return null;
@@ -139,6 +141,19 @@ const DriverMap: React.FC<Props> = ({ busLat, busLng, busPlate, routeData, gpsUp
     const [showPanel, setShowPanel] = useState(true);
     const [flyTarget, setFlyTarget] = useState<{ lat: number; lng: number; zoom?: number } | null>(null);
     const [expanded, setExpanded] = useState(false);
+    const [routeStudents, setRouteStudents] = useState<any[]>([]);
+
+    useEffect(() => {
+        if (!routeData?._id) return;
+        const fetchStudents = () => {
+            studentAPI.getAll({ route_id: routeData._id }).then(res => {
+                setRouteStudents(res.data.data);
+            }).catch(console.error);
+        };
+        fetchStudents();
+        const interval = setInterval(fetchStudents, 15000); // 15s refresh
+        return () => clearInterval(interval);
+    }, [routeData?._id]);
 
     const stops = routeData?.stops
         ? [...routeData.stops].sort((a, b) => a.order - b.order)
@@ -450,6 +465,35 @@ const DriverMap: React.FC<Props> = ({ busLat, busLng, busPlate, routeData, gpsUp
                                             <span style={{ color: '#60A5FA', fontSize: 12, fontWeight: 600 }}>{nextInstruction}</span>
                                         </div>
                                     )}
+
+                                    {/* Danh sách học sinh ở điểm này */}
+                                    {(() => {
+                                        const studentsAtThisStop = routeStudents.filter(s => s.assigned_stop === currentStop.stopName);
+                                        if (studentsAtThisStop.length > 0) {
+                                            return (
+                                                <div style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '10px 12px', marginBottom: 12 }}>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8, fontSize: 12, fontWeight: 600, color: '#94a3b8' }}>
+                                                        <Users size={14} /> Danh sách tại điểm này ({studentsAtThisStop.length})
+                                                    </div>
+                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 150, overflowY: 'auto' }}>
+                                                        {studentsAtThisStop.map(s => (
+                                                            <div key={s._id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 13, background: 'rgba(0,0,0,0.2)', padding: '6px 10px', borderRadius: 6 }}>
+                                                                <span style={{ color: 'white', fontWeight: 500 }}>{s.fullName}</span>
+                                                                <span style={{ fontSize: 10, padding: '2px 6px', borderRadius: 12, 
+                                                                    background: s.currentStatus === 'On_Bus' ? 'rgba(59,130,246,0.2)' : s.currentStatus === 'Absent' ? 'rgba(239,68,68,0.2)' : s.currentStatus === 'Dropped_Off' ? 'rgba(139,92,246,0.2)' : 'rgba(16,185,129,0.2)',
+                                                                    color: s.currentStatus === 'On_Bus' ? '#60A5FA' : s.currentStatus === 'Absent' ? '#F87171' : s.currentStatus === 'Dropped_Off' ? '#C084FC' : '#34D399',
+                                                                    fontWeight: 600
+                                                                }}>
+                                                                    {s.currentStatus === 'On_Bus' ? 'Trên xe' : s.currentStatus === 'Absent' ? 'Nghỉ' : s.currentStatus === 'Dropped_Off' ? 'Đã xuống' : 'Chưa lên'}
+                                                                </span>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            );
+                                        }
+                                        return null;
+                                    })()}
 
                                     {/* Điều hướng nút */}
                                     <div style={{ display: 'flex', gap: 8 }}>

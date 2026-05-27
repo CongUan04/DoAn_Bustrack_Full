@@ -44,7 +44,7 @@ export const authAPI = {
         api.post('/auth/login', { email, password }),
     getMe: () =>
         api.get('/auth/me'),
-    updateProfile: (data: { fullName?: string; email?: string; currentPassword?: string; newPassword?: string }) =>
+    updateProfile: (data: { fullName?: string; email?: string; currentPassword?: string; newPassword?: string; avatar?: string }) =>
         api.put('/auth/profile', data),
     forgotPassword: (identity: string) =>
         api.post('/auth/forgot-password', { identity }),
@@ -68,7 +68,7 @@ export const studentAPI = {
     create: (data: unknown) => api.post('/students', data),
     update: (id: string, data: unknown) => api.put(`/students/${id}`, data),
     remove: (id: string) => api.delete(`/students/${id}`),
-    markAbsent: (id: string, reason?: string) => api.put(`/students/${id}/absent`, { reason }),
+    markAbsent: (id: string, reason?: string, date?: string) => api.put(`/students/${id}/absent`, { reason, date }),
     updateStudyDays: (id: string, studyDays: number[]) => api.put(`/students/${id}/study-days`, { studyDays }),
 };
 
@@ -128,3 +128,15 @@ export const userAPI = {
         api.post(`/users/${id}/test-telegram`),
 };
 
+// ── Upload ────────────────────────────────────────────────────
+export const uploadAPI = {
+    uploadImage: (file: File) => {
+        const formData = new FormData();
+        formData.append('image', file);
+        return api.post('/upload', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+    },
+};

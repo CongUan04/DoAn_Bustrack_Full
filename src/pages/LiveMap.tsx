@@ -126,7 +126,8 @@ const ROUTE_COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EC4899', '#8B5CF6', '#E
 const FlyTo: React.FC<{ lat: number; lng: number }> = ({ lat, lng }) => {
     const map = useMap();
     useEffect(() => {
-        map.flyTo([lat, lng], 15, { duration: 1.2, easeLinearity: 0.3 });
+        // Dùng panTo thay vì flyTo để theo dõi xe mượt mà hơn khi GPS cập nhật liên tục
+        map.panTo([lat, lng], { animate: true, duration: 0.5 });
     }, [lat, lng, map]);
     return null;
 };

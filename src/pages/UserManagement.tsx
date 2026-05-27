@@ -18,6 +18,7 @@ interface UserDoc {
     telegram_chat_id?: string;
     isActive: boolean;
     createdAt: string;
+    avatar?: string;
 }
 
 const PAGE_SZ = 10;
@@ -379,8 +380,12 @@ const UserManagement: React.FC = () => {
                                             <td className="row-num">{(page - 1) * PAGE_SZ + idx + 1}</td>
                                             <td>
                                                 <div className="student-cell">
-                                                    <div className="student-avatar" style={{ background: `${rm.color}22`, color: rm.color }}>
-                                                        {u.fullName.split(' ').pop()?.charAt(0)}
+                                                    <div className="student-avatar" style={{ background: `${rm.color}22`, color: rm.color, overflow: 'hidden' }}>
+                                                        {u.avatar ? (
+                                                            <img src={u.avatar.startsWith('http') ? u.avatar : `${(import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace('/api', '')}${u.avatar}`} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                        ) : (
+                                                            u.fullName.split(' ').pop()?.charAt(0)
+                                                        )}
                                                     </div>
                                                     <span className="student-name">{u.fullName}</span>
                                                 </div>

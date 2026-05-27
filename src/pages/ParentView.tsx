@@ -18,7 +18,7 @@ import {
     Lock, Sun, Moon, LogOut, Settings, Send
 } from 'lucide-react';
 import { toast } from 'react-toastify';
-import { attendanceAPI, busAPI, studentAPI, routeAPI, authAPI } from '../services/api';
+import { attendanceAPI, busAPI, studentAPI, routeAPI, authAPI, uploadAPI } from '../services/api';
 import { useSocket } from '../contexts/SocketContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useOutletContext } from 'react-router-dom';
@@ -102,10 +102,12 @@ const PRESET_REASONS = [
 // ── Absence Modal Component ─────────────────────────────────────
 const AbsenceModal: React.FC<{
     childName: string;
-    onConfirm: (reason: string) => void;
+    onConfirm: (reason: string, date: string) => void;
     onClose: () => void;
     loading: boolean;
 }> = ({ childName, onConfirm, onClose, loading }) => {
+    const todayStr = new Date().toLocaleString('sv-SE', { timeZone: 'Asia/Ho_Chi_Minh' }).substring(0, 10);
+    const [selectedDate, setSelectedDate] = useState(todayStr);
     const [selected, setSelected] = useState('');
     const [custom, setCustom] = useState('');
 
@@ -144,12 +146,30 @@ const AbsenceModal: React.FC<{
                             <XCircle size={22} color="var(--danger)" />
                         </div>
                         <div>
-                            <p style={{ margin: 0, fontWeight: 700, fontSize: 16, color: 'var(--text-primary)' }}>Báo vắng mặt hôm nay</p>
+                            <p style={{ margin: 0, fontWeight: 700, fontSize: 16, color: 'var(--text-primary)' }}>Báo vắng mặt</p>
                             <p style={{ margin: '2px 0 0', fontSize: 12, color: 'var(--text-secondary)' }}>{childName}</p>
                         </div>
                         <button onClick={onClose} style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: 'var(--text-secondary)' }}>
                             <X size={18} />
                         </button>
+                    </div>
+
+                    {/* Date Picker */}
+                    <div style={{ marginBottom: 16 }}>
+                        <p style={{ margin: '0 0 6px', fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: 0.6 }}>
+                            Chọn ngày vắng
+                        </p>
+                        <input 
+                            type="date"
+                            value={selectedDate}
+                            onChange={(e) => setSelectedDate(e.target.value)}
+                            min={todayStr}
+                            style={{
+                                width: '100%', padding: '10px 12px', borderRadius: 10,
+                                border: '1.5px solid var(--border)', background: 'var(--bg)',
+                                color: 'var(--text-primary)', fontSize: 14, outline: 'none', fontFamily: 'inherit'
+                            }}
+                        />
                     </div>
 
                     {/* Reason presets */}
@@ -212,7 +232,7 @@ const AbsenceModal: React.FC<{
                             Huỷ
                         </button>
                         <button
-                            onClick={() => canSubmit && onConfirm(finalReason)}
+                            onClick={() => canSubmit && onConfirm(finalReason, selectedDate)}
                             disabled={!canSubmit || loading}
                             style={{
                                 flex: 2, padding: '11px', borderRadius: 10, border: 'none',
@@ -236,6 +256,7 @@ const ParentSettings: React.FC = () => {
     const { user, updateUser, logout } = useAuth();
     const [form, setForm] = useState({ email: '', currentPassword: '', newPassword: '', confirmPassword: '' });
     const [loading, setLoading] = useState(false);
+    const [uploadingAvatar, setUploadingAvatar] = useState(false);
     const [msg, setMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
     const [isDarkMode, setIsDarkMode] = useState(() => document.documentElement.classList.contains('dark-theme'));
 
@@ -280,13 +301,42 @@ const ParentSettings: React.FC = () => {
         <div style={{ maxWidth: 600, margin: '0 auto', paddingBottom: 40 }}>
             {/* Profile Header */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '18px', background: 'var(--surface)', borderRadius: 16, marginBottom: 20, boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
-                <div style={{
-                    width: 56, height: 56, borderRadius: 16,
-                    background: 'linear-gradient(135deg,#7c3aed,#a855f7)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    color: 'white', fontWeight: 700, fontSize: 24,
-                }}>
-                    {user?.fullName?.split(' ').pop()?.charAt(0)}
+                <div style={{ position: 'relative' }}>
+                    <div style={{
+                        width: 64, height: 64, borderRadius: 16,
+                        background: 'linear-gradient(135deg,#7c3aed,#a855f7)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        color: 'white', fontWeight: 700, fontSize: 28, overflow: 'hidden'
+                    }}>
+                        {(user as any)?.avatar ? (
+                            <img src={(user as any).avatar.startsWith('http') ? (user as any).avatar : `${(import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace('/api', '')}${(user as any).avatar}`} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        ) : (
+                            user?.fullName?.split(' ').pop()?.charAt(0)
+                        )}
+                    </div>
+                    <label style={{
+                        position: 'absolute', bottom: -6, right: -6, width: 28, height: 28, borderRadius: '50%',
+                        background: 'var(--surface)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                    }}>
+                        {uploadingAvatar ? <Loader2 size={14} className="spin" /> : <Settings size={14} />}
+                        <input type="file" accept="image/*" style={{ display: 'none' }} onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+                            setUploadingAvatar(true);
+                            try {
+                                const res = await uploadAPI.uploadImage(file);
+                                const avatarUrl = res.data.data.url;
+                                const updateRes = await authAPI.updateProfile({ avatar: avatarUrl });
+                                const updated = updateRes.data.data;
+                                updateUser({ avatar: updated.avatar });
+                                toast.success('Cập nhật ảnh đại diện thành công');
+                            } catch (err: any) {
+                                toast.error(err.response?.data?.message || 'Lỗi tải ảnh lên');
+                            } finally {
+                                setUploadingAvatar(false);
+                            }
+                        }} />
+                    </label>
                 </div>
                 <div>
                     <p style={{ margin: 0, fontWeight: 700, fontSize: 18, color: 'var(--text-primary)' }}>{user?.fullName}</p>
@@ -459,12 +509,12 @@ const ParentView: React.FC = () => {
         setAbsentModal({ childId, childName });
     };
 
-    const handleConfirmAbsent = async (reason: string) => {
+    const handleConfirmAbsent = async (reason: string, date: string) => {
         if (!absentModal) return;
         setAbsentLoading(true);
         try {
-            await studentAPI.markAbsent(absentModal.childId, reason);
-            toast.success(`✅ Đã báo vắng mặt cho ${absentModal.childName}. Lý do: ${reason}. Tài xế đã được thông báo.`);
+            await studentAPI.markAbsent(absentModal.childId, reason, date);
+            toast.success(`✅ Đã báo vắng mặt cho ${absentModal.childName} ngày ${date.split('-').reverse().join('/')}.`);
             setAbsentModal(null);
             fetchData();
         } catch (err: any) {
@@ -747,6 +797,36 @@ const ParentView: React.FC = () => {
                                                 </div>
                                             </div>
 
+                                            {/* Weekly Schedule */}
+                                            <div style={{ marginTop: 14, paddingTop: 14, borderTop: '1px dashed var(--border)' }}>
+                                                <p style={{ margin: '0 0 10px', fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                                                    <Calendar size={15} color="#7c3aed" /> Lịch đi xe buýt
+                                                </p>
+                                                <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4, WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none' }}>
+                                                    {[
+                                                        { v: 1, l: 'T2' }, { v: 2, l: 'T3' }, { v: 3, l: 'T4' },
+                                                        { v: 4, l: 'T5' }, { v: 5, l: 'T6' }, { v: 6, l: 'T7' }, { v: 0, l: 'CN' }
+                                                    ].map(day => {
+                                                        const isActive = (child.studyDays ?? [1, 2, 3, 4, 5]).includes(day.v);
+                                                        return (
+                                                            <div
+                                                                key={day.v}
+                                                                style={{
+                                                                    flexShrink: 0, width: 34, height: 34, borderRadius: 10,
+                                                                    border: `1.5px solid ${isActive ? '#7c3aed' : 'var(--border)'}`,
+                                                                    background: isActive ? 'var(--purple-light)' : 'var(--surface)',
+                                                                    color: isActive ? '#7c3aed' : 'var(--text-secondary)',
+                                                                    fontWeight: isActive ? 700 : 500, fontSize: 13,
+                                                                    display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                                                }}
+                                                            >
+                                                                {day.l}
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+
                                             {latestChildLog && (
                                                 <div style={{ marginTop: 14, padding: '10px 12px', background: latestChildLog.action_type === 'Boarding' ? 'var(--success-light)' : 'var(--primary-light)', borderRadius: 10, fontSize: 12, display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
                                                     {latestChildLog.action_type === 'Boarding'
@@ -771,31 +851,33 @@ const ParentView: React.FC = () => {
                                                 </div>
                                             )}
 
-                                            {child.currentStatus !== 'Absent' && !isOnBus && (
-                                                <button
-                                                    onClick={() => handleMarkAbsent(child._id, child.fullName)}
-                                                    style={{
-                                                        marginTop: 14, width: '100%', padding: '12px',
-                                                        background: 'var(--danger-light)', color: 'var(--danger)',
-                                                        border: '1px solid rgba(239,68,68,0.3)', borderRadius: 10,
-                                                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                                                        cursor: 'pointer', fontWeight: 600, fontSize: 13
-                                                    }}
-                                                >
-                                                    <XCircle size={16} />
-                                                    Báo vắng mặt hôm nay
-                                                </button>
-                                            )}
-                                            {child.currentStatus === 'Absent' && (
-                                                <div style={{
-                                                    marginTop: 14, width: '100%', padding: '12px',
-                                                    background: 'var(--surface-hover)', color: 'var(--text-secondary)',
-                                                    border: '1px solid var(--border)', borderRadius: 10,
-                                                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                                                    fontWeight: 600, fontSize: 13
-                                                }}>
-                                                    <XCircle size={16} />
-                                                    Đã báo vắng mặt
+                                            {!isOnBus && (
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 14 }}>
+                                                    {child.currentStatus === 'Absent' && (
+                                                        <div style={{
+                                                            width: '100%', padding: '10px',
+                                                            background: 'var(--surface-hover)', color: 'var(--text-secondary)',
+                                                            border: '1px solid var(--border)', borderRadius: 10,
+                                                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                                                            fontWeight: 600, fontSize: 12
+                                                        }}>
+                                                            <XCircle size={14} />
+                                                            Đã báo vắng mặt hôm nay
+                                                        </div>
+                                                    )}
+                                                    <button
+                                                        onClick={() => handleMarkAbsent(child._id, child.fullName)}
+                                                        style={{
+                                                            width: '100%', padding: '12px',
+                                                            background: 'var(--danger-light)', color: 'var(--danger)',
+                                                            border: '1px solid rgba(239,68,68,0.3)', borderRadius: 10,
+                                                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                                                            cursor: 'pointer', fontWeight: 600, fontSize: 13
+                                                        }}
+                                                    >
+                                                        <XCircle size={16} />
+                                                        Xin nghỉ phép (báo vắng mặt)
+                                                    </button>
                                                 </div>
                                             )}
                                         </div>

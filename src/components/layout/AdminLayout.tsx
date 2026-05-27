@@ -161,7 +161,11 @@ const AdminSidebar: React.FC<{ collapsed: boolean; isMobile: boolean; onToggle: 
                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                                 color: 'white', fontWeight: 700, fontSize: 14,
                             }}>
-                                {user?.fullName?.charAt(0)}
+                                {user?.avatar ? (
+                                    <img src={user.avatar.startsWith('http') ? user.avatar : `${(import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace('/api', '')}${user.avatar}`} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                ) : (
+                                    user?.fullName?.charAt(0)
+                                )}
                             </div>
                             <div style={{ flex: 1, minWidth: 0 }}>
                                 <p style={{ margin: 0, color: 'white', fontSize: 13, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user?.fullName}</p>
@@ -431,7 +435,11 @@ const AdminTopbar: React.FC<{ sidebarCollapsed: boolean; isMobile: boolean; onTo
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
                             color: 'white', fontWeight: 700, fontSize: 13,
                         }}>
-                            {user?.fullName?.charAt(0)}
+                            {user?.avatar ? (
+                                <img src={user.avatar.startsWith('http') ? user.avatar : `${(import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace('/api', '')}${user.avatar}`} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            ) : (
+                                user?.fullName?.charAt(0)
+                            )}
                         </div>
                         <div style={{ textAlign: 'left' }}>
                             <p style={{ margin: 0, fontSize: 12.5, fontWeight: 600, color: 'var(--text-primary)' }}>{user?.fullName}</p>
