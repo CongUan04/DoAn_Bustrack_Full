@@ -4,18 +4,18 @@
  * Chỉ có header top với thông tin cơ bản và nút profile/logout
  */
 import React, { useState } from 'react';
-import { Outlet, Navigate, useLocation } from 'react-router-dom';
+import { Outlet, Navigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Bus, Bell, LogOut, Settings, ChevronDown, Wifi, WifiOff, X, Lock, Mail, Clock, Sun, Moon, Map as MapIcon, Calendar, User } from 'lucide-react';
+import { Bus, Bell, Wifi, WifiOff, Clock, Map as MapIcon, Calendar, User } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useSocket } from '../../contexts/SocketContext';
-import { authAPI } from '../../services/api';
+// import { authAPI } from '../../services/api';
 import { toast } from 'react-toastify';
-import TelegramSettings from '../TelegramSettings';
+// import TelegramSettings from '../TelegramSettings';
 
 // ── Parent Layout ─────────────────────────────────────────────
 const ParentLayout: React.FC = () => {
-    const { isAuthenticated, user, logout } = useAuth();
+    const { isAuthenticated, user } = useAuth();
     const { connected, recentSwipes, lastRfidEvent } = useSocket();
     const [showNotif, setShowNotif] = useState(false);
     const [readIds, setReadIds] = useState<Set<string>>(new Set());

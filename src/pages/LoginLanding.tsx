@@ -1,7 +1,7 @@
 import React, { useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Users, MapPin, Shield, Map, Bus } from 'lucide-react';
+import { Users, MapPin, Bus } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 const LoginLanding: React.FC = () => {

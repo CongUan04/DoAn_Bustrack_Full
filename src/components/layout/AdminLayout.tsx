@@ -222,7 +222,7 @@ const AdminTopbar: React.FC<{ sidebarCollapsed: boolean; isMobile: boolean; onTo
             return;
         }
 
-        const timeStr = lastRfidEvent.timestamp.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+        // const timeStr = lastRfidEvent.timestamp.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
 
         if (isAbnormal) {
             toast.error(`🚨 CẢNH BÁO: ${studentName} vừa ${action.toUpperCase()} ${licensePlate} nhưng ${abnormalReason}!`, { autoClose: 10000 });

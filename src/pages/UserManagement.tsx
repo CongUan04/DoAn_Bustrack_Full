@@ -262,7 +262,7 @@ const UserManagement: React.FC = () => {
         if (!delUser) return;
         try {
             await userAPI.remove(delUser._id);
-            showToast(`🗑️ Đã xoá ${delUser.fullName}`);
+            showToast(`Đã xoá ${delUser.fullName}`);
             setDelUser(null); await fetch();
         } catch {
             showToast('❌ Không thể xoá tài khoản', 'error');
@@ -272,10 +272,10 @@ const UserManagement: React.FC = () => {
     const handleTestTelegramAdmin = async (u: UserDoc) => {
         try {
             await userAPI.testTelegramAdmin(u._id);
-            showToast(`🔔 Đã gửi tin nhắn test đến Telegram của ${u.fullName}`);
+            showToast(`Đã gửi tin nhắn test đến Telegram của ${u.fullName}`);
         } catch (err: unknown) {
             const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Lỗi gửi tin test';
-            showToast(`❌ ${msg}`, 'error');
+            showToast(`${msg}`, 'error');
         }
     };
 

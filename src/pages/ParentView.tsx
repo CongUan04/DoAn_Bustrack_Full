@@ -6,15 +6,15 @@
  * - Banner nhắc cập nhật Gmail nếu chưa có
  * - Modal chỉnh sửa thông tin tài khoản
  */
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MapContainer, TileLayer, Marker, Popup, Polyline } from 'react-leaflet';
 import L from 'leaflet';
 import {
-    ArrowUpCircle, ArrowDownCircle, Bus, CreditCard,
-    MapPin, Calendar, RefreshCw,
-    Loader2, Wifi, WifiOff, CheckCircle,
-    GraduationCap, Route, User, Mail, X, AlertTriangle, XCircle,
+    ArrowUpCircle, ArrowDownCircle, CreditCard,
+    Calendar, RefreshCw,
+    Loader2,
+    Route, Mail, X, AlertTriangle, XCircle,
     Lock, Sun, Moon, LogOut, Settings, Send
 } from 'lucide-react';
 import { toast } from 'react-toastify';
@@ -449,7 +449,7 @@ const ParentSettings: React.FC = () => {
 // ── Main Component ──────────────────────────────────────────────
 const ParentView: React.FC = () => {
     const { user } = useAuth();
-    const { connected: socketConnected, recentSwipes, gpsUpdates } = useSocket();
+    const { gpsUpdates } = useSocket();
     const { activeTab, setActiveTab } = useOutletContext<{ activeTab: string, setActiveTab: (t: string) => void }>();
 
     const [children, setChildren] = useState<StudentInfo[]>([]);
@@ -473,7 +473,7 @@ const ParentView: React.FC = () => {
     const needTgSetup = !user?.telegramChatId && !dismissTgBanner;
 
     const todayISO = new Date().toISOString().slice(0, 10);
-    const childIds = children.map(c => c._id);
+    // const childIds = children.map(c => c._id);
 
     const fetchData = useCallback(async () => {
         try {
@@ -524,19 +524,19 @@ const ParentView: React.FC = () => {
         }
     };
 
-    const handleToggleStudyDay = async (child: StudentInfo, day: number) => {
-        const current = child.studyDays ?? [1, 2, 3, 4, 5];
-        const updated = current.includes(day)
-            ? current.filter(d => d !== day)
-            : [...current, day].sort();
-        try {
-            await studentAPI.updateStudyDays(child._id, updated);
-            setChildren(prev => prev.map(c => c._id === child._id ? { ...c, studyDays: updated } : c));
-            toast.success('Đã cập nhật lịch học!');
-        } catch (err: any) {
-            toast.error(err.response?.data?.message || 'Lỗi cập nhật lịch học');
-        }
-    };
+    // const handleToggleStudyDay = async (child: StudentInfo, day: number) => {
+    //     const current = child.studyDays ?? [1, 2, 3, 4, 5];
+    //     const updated = current.includes(day)
+    //         ? current.filter(d => d !== day)
+    //         : [...current, day].sort();
+    //     try {
+    //         await studentAPI.updateStudyDays(child._id, updated);
+    //         setChildren(prev => prev.map(c => c._id === child._id ? { ...c, studyDays: updated } : c));
+    //         toast.success('Đã cập nhật lịch học!');
+    //     } catch (err: any) {
+    //         toast.error(err.response?.data?.message || 'Lỗi cập nhật lịch học');
+    //     }
+    // };
 
     useEffect(() => {
         fetchData();
@@ -555,7 +555,7 @@ const ParentView: React.FC = () => {
     }, [gpsUpdates]);
 
     const latestLog = logs[0];
-    const onlineBuses = buses.filter(b => b.isOnline);
+    // const onlineBuses = buses.filter(b => b.isOnline);
 
     // Map center: dùng vị trí trường học của tuyến con em, hoặc trung tâm mặc định
     const mapCenter: [number, number] = (() => {
@@ -703,7 +703,7 @@ const ParentView: React.FC = () => {
                             drag="y"
                             dragConstraints={{ top: 0, bottom: 0 }}
                             dragElastic={0.5}
-                            onDragEnd={(e, info) => {
+                            onDragEnd={(_e, info) => {
                                 const isSwipeDown = info.offset.y > 50 || info.velocity.y > 300;
                                 const isSwipeUp = info.offset.y < -50 || info.velocity.y < -300;
                                 if (isSwipeDown) setSheetOpen(false);

@@ -19,7 +19,7 @@ const DriverProfileModal: React.FC<{ onClose: () => void, user: any }> = ({ onCl
     const [uploadingAvatar, setUploadingAvatar] = useState(false);
     const [pendingAvatar, setPendingAvatar] = useState<string | null>(null);
     const [phone, setPhone] = useState(user?.phone || '');
-    const { login, updateUser } = useAuth(); // Để cập nhật lại user data
+    const { updateUser } = useAuth(); // Để cập nhật lại user data
 
     const handleSave = async () => {
         if (newPassword && !currentPassword) {
