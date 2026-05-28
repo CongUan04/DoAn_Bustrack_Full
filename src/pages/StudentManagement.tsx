@@ -523,7 +523,7 @@ const StudentModal: React.FC<{
                                     <button key={String(v)} type="button"
                                         className={`toggle-option ${form.isActive === v ? 'selected' : ''} toggle-${v ? 'active' : 'inactive'}`}
                                         onClick={() => set('isActive', v)}>
-                                        {v ? '✅ Đang theo học' : '⛔ Nghỉ học'}
+                                        {v ? 'Đang theo học' : 'Nghỉ học'}
                                     </button>
                                 ))}
                             </div>
@@ -855,11 +855,11 @@ const StudentManagement: React.FC = () => {
         if (!del) return;
         try {
             await studentAPI.remove(del._id);
-            showToast(`🗑️ Đã xoá học sinh ${del.fullName}`);
+            showToast(`Đã xoá học sinh ${del.fullName}`);
             setDel(null);
             await fetchStudents();
         } catch {
-            showToast('❌ Không thể xoá học sinh', 'error');
+            showToast('Không thể xoá học sinh', 'error');
         }
     };
 

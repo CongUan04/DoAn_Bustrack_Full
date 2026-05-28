@@ -214,7 +214,7 @@ const UserManagement: React.FC = () => {
                 // silent
             }
         } catch {
-            showToast('❌ Không thể tải danh sách tài khoản', 'error');
+            showToast(' Không thể tải danh sách tài khoản', 'error');
         } finally { setLoading(false); }
     }, [filterRole, search]);
 
@@ -229,11 +229,11 @@ const UserManagement: React.FC = () => {
         setSaving(true);
         try {
             await userAPI.update(editUser._id, data);
-            showToast(`✅ Đã cập nhật ${editUser.fullName}`);
+            showToast(`Đã cập nhật ${editUser.fullName}`);
             setEditUser(null); await fetch();
         } catch (err: unknown) {
             const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Lỗi cập nhật';
-            showToast(`❌ ${msg}`, 'error');
+            showToast(`${msg}`, 'error');
         } finally { setSaving(false); }
     };
 
@@ -241,20 +241,20 @@ const UserManagement: React.FC = () => {
         try {
             const res = await userAPI.resetPassword(u._id);
             setNewPassword({ pw: res.data.newPassword, email: u.email });
-            showToast(`🔑 Đã reset mật khẩu cho ${u.fullName}`);
+            showToast(`Đã reset mật khẩu cho ${u.fullName}`);
         } catch {
-            showToast('❌ Không thể reset mật khẩu', 'error');
+            showToast('Không thể reset mật khẩu', 'error');
         }
     };
 
     const handleToggleActive = async (u: UserDoc) => {
         try {
             await userAPI.update(u._id, { isActive: !u.isActive });
-            showToast(u.isActive ? `⛔ Đã khóa ${u.fullName}` : `✅ Đã mở khóa ${u.fullName}`);
+            showToast(u.isActive ? `Đã khóa ${u.fullName}` : `Đã mở khóa ${u.fullName}`);
             await fetch();
         } catch (err: unknown) {
             const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Lỗi';
-            showToast(`❌ ${msg}`, 'error');
+            showToast(`${msg}`, 'error');
         }
     };
 
@@ -265,7 +265,7 @@ const UserManagement: React.FC = () => {
             showToast(`Đã xoá ${delUser.fullName}`);
             setDelUser(null); await fetch();
         } catch {
-            showToast('❌ Không thể xoá tài khoản', 'error');
+            showToast('Không thể xoá tài khoản', 'error');
         }
     };
 
