@@ -115,6 +115,9 @@ const Dashboard: React.FC = () => {
     const {
         recentSwipes: socketSwipes,
         connected: socketConnected,
+        lastRfidEvent,
+        lastAlert,
+        lastStudentStatus,
     } = useSocket();
 
     // ── REST fallback swipes (initial load) ───────────────────
@@ -165,6 +168,13 @@ const Dashboard: React.FC = () => {
         const interval = setInterval(fetchStats, 30000);
         return () => clearInterval(interval);
     }, [fetchStats]);
+
+    // Lắng nghe sự kiện quẹt thẻ để cập nhật KPI (Học sinh trên xe) ngay lập tức
+    useEffect(() => {
+        if (lastRfidEvent || lastAlert || lastStudentStatus) {
+            fetchStats();
+        }
+    }, [lastRfidEvent, lastAlert, lastStudentStatus, fetchStats]);
 
     // Tick for relative timestamps
     useEffect(() => {
